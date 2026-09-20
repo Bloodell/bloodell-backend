@@ -1,0 +1,21 @@
+# O Git nao pode trocar as quebras de linha destes arquivos.
+#
+# mvnw e um script de shell: com CRLF, o Linux e o Git Bash respondem
+# "bad interpreter: /bin/sh^M" e o build nao roda -- inclusive no CI.
+mvnw            text eol=lf
+*.sh            text eol=lf
+
+# O Makefile usa TABULACAO no inicio das linhas de comando. Perder a tabulacao
+# quebra o make com "missing separator".
+Makefile        text eol=lf
+academic/cpp/** text eol=lf
+
+# .cmd e .bat sao do Windows e ficam com CRLF.
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# Nao mexer em binarios.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.zip binary

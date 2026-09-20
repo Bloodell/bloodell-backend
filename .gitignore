@@ -1,0 +1,11 @@
+target/
+logs/
+.env
+*.env.local
+.idea/
+*.iml
+.vscode/
+.DS_Store
+academic/cpp/build/
+tests/parity/saida/
+verificacao.log

@@ -1,0 +1,30 @@
+name: Deploy backend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  publicar:
+    name: Publicar a versao de main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar o JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Empacotar
+        run: ./mvnw -B -DskipTests package
+
+
+      - name: Lembrete de configuracao pendente
+        run: |
+          echo "Deploy ainda nao configurado."
+          echo "Escolher provedor (Render/Railway/Fly.io), criar o secret DEPLOY_TOKEN"
+          echo "e descomentar os passos acima. Ver docs/adr/ADR-006."

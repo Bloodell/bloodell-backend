@@ -1,0 +1,6 @@
+target/
+logs/
+.env
+.git/
+academic/cpp/build/
+tests/parity/saida/

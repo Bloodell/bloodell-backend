@@ -1,0 +1,27 @@
+{
+  "nome": "fila-prioridade-e-chegada",
+  "etapa": "U1",
+  "estrutura": "FILA",
+  "descricao": "Cinco requisicoes com prioridades misturadas. A saida precisa ser EMERGENCIA, depois URGENTE, depois ELETIVA, respeitando a chegada dentro de cada prioridade.",
+  "comandos": [
+    "ESTRUTURA FILA",
+    "ENFILEIRAR REQ-1 HospitalNorte ELETIVA 1",
+    "ENFILEIRAR REQ-2 HospitalSul EMERGENCIA 2",
+    "ENFILEIRAR REQ-3 HospitalOeste URGENTE 3",
+    "ENFILEIRAR REQ-4 HospitalNorte EMERGENCIA 4",
+    "ENFILEIRAR REQ-5 HospitalSul ELETIVA 5",
+    "TAMANHO FILA",
+    "LISTAR FILA",
+    "ESPIAR",
+    "DESENFILEIRAR",
+    "DESENFILEIRAR",
+    "ESPIAR",
+    "LISTAR FILA",
+    "DESENFILEIRAR",
+    "DESENFILEIRAR",
+    "DESENFILEIRAR",
+    "DESENFILEIRAR",
+    "ESPIAR",
+    "TAMANHO FILA"
+  ]
+}

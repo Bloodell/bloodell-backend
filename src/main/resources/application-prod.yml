@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    show-sql: false
+server:
+  error:
+    include-message: never
+logging:
+  level:
+    root: INFO
+    br.edu.cesar.bloodell: INFO
+bloodell:
+  demonstracao:
+    habilitado: ${BLOODELL_DEMO_HABILITADO:false}

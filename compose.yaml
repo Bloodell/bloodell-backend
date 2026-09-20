@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bloodell}
+      POSTGRES_USER: ${POSTGRES_USER:-bloodell}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?preencha POSTGRES_PASSWORD no .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [dados]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      BLOODELL_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bloodell}
+      BLOODELL_DB_USER: ${POSTGRES_USER:-bloodell}
+      BLOODELL_DB_PASSWORD: ${POSTGRES_PASSWORD:?preencha POSTGRES_PASSWORD no .env}
+      BLOODELL_CORS_ORIGENS: http://127.0.0.1:5173,http://localhost:5173
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks: [aplicacao, dados]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+
+networks:
+  aplicacao: {}
+  dados:
+    internal: true
+
+volumes:
+  postgres-data: {}

@@ -1,0 +1,29 @@
+{
+  "nome": "lista-ordem-de-chegada",
+  "etapa": "U1",
+  "estrutura": "LISTA",
+  "descricao": "Insercao no fim, busca, remocao de cabeca/meio/fim e escolha da primeira bolsa pela ordem de chegada. BL-9 vence antes de BL-1 de proposito: se algum lado escolher BL-9, alguem implementou FEFO na U1.",
+  "comandos": [
+    "ESTRUTURA LISTA",
+    "INSERIR BL-1 A+ CONCENTRADO_HEMACIAS 2026-12-31 1 DISPONIVEL",
+    "INSERIR BL-2 O+ CONCENTRADO_HEMACIAS 2026-11-10 2 DISPONIVEL",
+    "INSERIR BL-9 A+ CONCENTRADO_HEMACIAS 2026-09-25 9 DISPONIVEL",
+    "INSERIR BL-4 A+ PLASMA 2027-01-15 4 DISPONIVEL",
+    "TAMANHO LISTA",
+    "LISTAR LISTA",
+    "BUSCAR BL-2",
+    "BUSCAR BL-777",
+    "PRIMEIRA A+ CONCENTRADO_HEMACIAS DISPONIVEL",
+    "PRIMEIRA AB- CONCENTRADO_HEMACIAS DISPONIVEL",
+    "PRIMEIRA A+ PLASMA DISPONIVEL",
+    "REMOVER BL-1",
+    "LISTAR LISTA",
+    "REMOVER BL-4",
+    "LISTAR LISTA",
+    "REMOVER BL-777",
+    "REMOVER BL-2",
+    "REMOVER BL-9",
+    "TAMANHO LISTA",
+    "LISTAR LISTA"
+  ]
+}
