@@ -46,6 +46,7 @@ public class PropriedadesBloodell {
         private int capacidadeFila = 10000;
         private int quantidadeWorkers = 4;
         private int tamanhoLote = 100;
+        private long timeoutComunicacaoSegundos = 60;
 
         public int getCapacidadeFila() {
             return capacidadeFila;
@@ -69,6 +70,14 @@ public class PropriedadesBloodell {
 
         public void setTamanhoLote(int tamanhoLote) {
             this.tamanhoLote = tamanhoLote;
+        }
+
+        public long getTimeoutComunicacaoSegundos() {
+            return timeoutComunicacaoSegundos;
+        }
+
+        public void setTimeoutComunicacaoSegundos(long timeoutComunicacaoSegundos) {
+            this.timeoutComunicacaoSegundos = timeoutComunicacaoSegundos;
         }
     }
 

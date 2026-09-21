@@ -9,4 +9,6 @@ public interface AlertaRepository extends JpaRepository<Alerta, Long> {
 
     @Query("select a from Alerta a where a.resolvidoEm is null order by a.criadoEm desc")
     List<Alerta> listarAbertos();
+
+    boolean existsByTipoAndVeiculoIdAndResolvidoEmIsNull(String tipo, Long veiculoId);
 }

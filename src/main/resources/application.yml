@@ -60,6 +60,7 @@ bloodell:
     capacidade-fila: ${BLOODELL_TELEMETRIA_FILA:10000}
     quantidade-workers: ${BLOODELL_TELEMETRIA_WORKERS:4}
     tamanho-lote: ${BLOODELL_TELEMETRIA_LOTE:100}
+    timeout-comunicacao-segundos: ${BLOODELL_TELEMETRIA_TIMEOUT_SEGUNDOS:60}
   demonstracao:
     habilitado: ${BLOODELL_DEMO_HABILITADO:true}
   seguranca:

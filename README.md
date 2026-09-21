@@ -147,6 +147,7 @@ em evidência automatizada. `GET /api/v1/algoritmos/situacao` mostra o mesmo pel
 | `POST /api/v1/requisicoes/{id}/alocacoes` | processa e aloca (201 / 409 / 422) |
 | `POST /api/v1/telemetrias` | ingestão assíncrona (202) |
 | `GET /api/v1/telemetrias/metricas` | números da ingestão concorrente (SO) |
+| `GET /api/v1/alertas` | alertas ativos de cadeia fria e falha de comunicação |
 | `GET /api/v1/veiculos/{id}/telemetrias?de=&ate=` | histórico de cadeia fria |
 | `GET /api/v1/algoritmos/estoque · /fila · /historico · /situacao` | visualizador |
 | `GET /api/v1/indicadores/estoque · /demanda · /tempos` | painéis descritivos |

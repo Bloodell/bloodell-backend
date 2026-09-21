@@ -3,6 +3,7 @@ package br.edu.cesar.bloodell.telemetria.infraestrutura;
 import br.edu.cesar.bloodell.telemetria.dominio.LeituraTelemetria;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +22,6 @@ public interface LeituraTelemetriaRepository extends JpaRepository<LeituraTeleme
                                                       @Param("ate") OffsetDateTime ate);
 
     long countByVeiculoId(Long veiculoId);
+
+    Optional<LeituraTelemetria> findTopByVeiculoIdOrderByRegistradaEmDesc(Long veiculoId);
 }
