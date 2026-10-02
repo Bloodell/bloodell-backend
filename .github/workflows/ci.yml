@@ -11,18 +11,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  estruturas-cpp:
-    name: Estruturas da AED em C++
+  estruturas-c:
+    name: Estruturas da AED em C11
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compilar e rodar os testes C++
-        working-directory: academic/cpp
+      - name: Compilar e rodar os testes C11
+        working-directory: academic/c
         run: make testar
 
   backend:
-    name: Build, testes e paridade C++ x Java
+    name: Build, testes e paridade C11 x Java
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Instalar compilador C++
+      - name: Instalar compilador C11
         run: sudo apt-get update && sudo apt-get install -y build-essential
 
       - name: mvnw verify
@@ -61,7 +61,7 @@ jobs:
   imagem:
     name: Build da imagem Docker
     runs-on: ubuntu-latest
-    needs: [backend, estruturas-cpp]
+    needs: [backend, estruturas-c]
     steps:
       - uses: actions/checkout@v4
 

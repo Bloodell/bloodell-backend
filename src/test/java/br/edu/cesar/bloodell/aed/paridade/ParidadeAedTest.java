@@ -37,7 +37,7 @@ class ParidadeAedTest {
 
     @ParameterizedTest(name = "paridade: {0}")
     @MethodSource("fixtures")
-    @DisplayName("executa a fixture nas estruturas Java e grava a saida para comparacao com o C++")
+    @DisplayName("executa a fixture nas estruturas Java e grava a saida para comparacao com C11")
     void executarFixture(Path arquivo) throws IOException {
         JsonNode fixture = JSON.readTree(Files.readString(arquivo, StandardCharsets.UTF_8));
         String nome = fixture.get("nome").asText();

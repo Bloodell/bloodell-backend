@@ -127,7 +127,7 @@
         <version>3.5.0</version>
         <executions>
           <execution>
-            <id>paridade-cpp</id>
+            <id>paridade-c</id>
             <phase>integration-test</phase>
             <goals><goal>exec</goal></goals>
             <configuration>

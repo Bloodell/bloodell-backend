@@ -4,6 +4,7 @@ import br.edu.cesar.bloodell.aed.contratos.RequisicaoAed;
 
 public class NoRequisicao {
 
+    // A referencia proximo ocupa o papel do ponteiro struct NoRequisicao* em C.
     private final RequisicaoAed dado;
     private NoRequisicao proximo;
 

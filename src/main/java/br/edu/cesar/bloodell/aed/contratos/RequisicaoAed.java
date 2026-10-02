@@ -2,6 +2,8 @@ package br.edu.cesar.bloodell.aed.contratos;
 
 public class RequisicaoAed {
 
+    // Os campos correspondem diretamente ao struct Requisicao da implementacao C11.
+
     private final String codigo;
     private final String hospital;
     private final String prioridade;

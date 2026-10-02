@@ -8,7 +8,7 @@ mvnw            text eol=lf
 # O Makefile usa TABULACAO no inicio das linhas de comando. Perder a tabulacao
 # quebra o make com "missing separator".
 Makefile        text eol=lf
-academic/cpp/** text eol=lf
+academic/c/** text eol=lf
 
 # .cmd e .bat sao do Windows e ficam com CRLF.
 *.cmd           text eol=crlf

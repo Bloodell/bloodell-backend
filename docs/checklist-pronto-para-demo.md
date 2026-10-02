@@ -51,7 +51,7 @@ Responsável do dia: _______________ · Data: ____/____/______
 
 ## 6. Evidência da entrega
 
-- [ ] CI verde no commit que vai ser apresentado (inclusive a paridade C++ × Java)
+- [ ] CI verde no commit que vai ser apresentado (inclusive a paridade C11 × Java)
 - [ ] README atualizado com a seção da entrega e o link do screencast
 - [ ] Tag criada (`v0.1-u1`, `v1.0-u2`)
 - [ ] Commits distribuídos entre os integrantes na semana

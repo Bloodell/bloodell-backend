@@ -2,6 +2,8 @@ package br.edu.cesar.bloodell.aed.contratos;
 
 public class BolsaAed {
 
+    // Contrato Java simples correspondente ao struct Bolsa do modulo academic/c.
+
     private final String codigo;
     private final String tipoSanguineo;
     private final String componente;

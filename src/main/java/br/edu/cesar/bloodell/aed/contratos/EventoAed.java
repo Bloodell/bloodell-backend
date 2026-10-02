@@ -2,6 +2,8 @@ package br.edu.cesar.bloodell.aed.contratos;
 
 public class EventoAed {
 
+    // Contrato equivalente ao struct Evento; null representa o status anterior ausente.
+
     private final String codigoBolsa;
     private final String statusAnterior;
     private final String statusNovo;

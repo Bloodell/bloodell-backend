@@ -20,7 +20,7 @@ class ListaEstoqueTest {
         lista.inserir(bolsa("BL-2", "O+", 2));
         lista.inserir(bolsa("BL-3", "A+", 3));
 
-        BolsaAed[] itens = lista.paraVetor();
+        BolsaAed[] itens = lista.listar();
         assertThat(lista.tamanho()).isEqualTo(3);
         assertThat(itens[0].getCodigo()).isEqualTo("BL-1");
         assertThat(itens[1].getCodigo()).isEqualTo("BL-2");
@@ -115,5 +115,20 @@ class ListaEstoqueTest {
         assertThat(lista.buscarPorCodigo("BL-1")).isNull();
         assertThat(lista.removerPorCodigo("BL-1")).isNull();
         assertThat(lista.paraVetor()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("limpar desconecta todos os nos e permite reutilizar a lista")
+    void limparEReutilizar() {
+        ListaEstoque lista = new ListaEstoque();
+        lista.inserir(bolsa("BL-1", "A+", 1));
+        lista.inserir(bolsa("BL-2", "A+", 2));
+
+        lista.limpar();
+
+        assertThat(lista.estaVazia()).isTrue();
+        assertThat(lista.tamanho()).isZero();
+        lista.inserir(bolsa("BL-3", "A+", 3));
+        assertThat(lista.listar()).extracting(BolsaAed::getCodigo).containsExactly("BL-3");
     }
 }

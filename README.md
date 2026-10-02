@@ -21,7 +21,7 @@ Frontend em repositório separado: `bloodell-frontend`.
 | Migrations | Flyway (SQL versionado em `src/main/resources/db/migration`) |
 | Documentação da API | OpenAPI/Swagger (springdoc) |
 | Testes | JUnit Jupiter, Mockito, Testcontainers |
-| Estruturas de dados (AED) | Java puro + espelho em C++ (`academic/cpp`) |
+| Estruturas de dados (AED) | Java puro + espelho em C11 (`academic/c`) |
 | Infraestrutura | Docker, Docker Compose, GitHub Actions |
 
 Sem Lombok e sem nenhum gerador de boilerplate: construtores, getters, `equals` e
@@ -30,7 +30,7 @@ Sem Lombok e sem nenhum gerador de boilerplate: construtores, getters, `equals` 
 ## De zero à API rodando (≈ 15 minutos)
 
 Pré-requisitos: **Git**, **Docker Desktop** (ou Docker Engine) e, para o build local,
-**JDK 25**. Compilador C++ (`g++` ou `clang++`) e `make` são necessários apenas para
+**JDK 25**. Compilador C11 (`cc`, `gcc` ou `clang`) e `make` são necessários apenas para
 a paridade da AED.
 
 ```bash
@@ -75,11 +75,11 @@ docker compose down -v                          # parar e APAGAR o banco (delibe
 ### Build e testes locais (sem Docker para a API)
 
 ```bash
-./mvnw -B verify          # testes rápidos + integração (Testcontainers) + paridade C++ x Java
+./mvnw -B verify          # testes rápidos + integração (Testcontainers) + paridade C11 x Java
 ./mvnw -B test            # só os testes rápidos (não precisa de Docker)
-./mvnw -B verify -Psem-paridade   # máquina sem compilador C++ (a etapa fica sem evidência)
+./mvnw -B verify -Psem-paridade   # máquina sem compilador C11 (a etapa fica sem evidência)
 
-cd academic/cpp && make testar    # só os testes das estruturas em C++
+cd academic/c && make testar      # só os testes das estruturas em C11
 ```
 
 No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
@@ -106,13 +106,13 @@ src/main/java/br/edu/cesar/bloodell/
   algoritmos/        inspeção didática das estruturas (visualizador)
   demonstracao/      cenário sintético reproduzível
   aed/               MÓDULO ACADÊMICO — Java puro, sem Spring e sem JPA
-    contratos/       dados simples espelhados em C++
+    contratos/       dados simples espelhados em C
     u1/              lista, fila e pilha com nós manuais
     u2/              SÓ interfaces e stubs indisponíveis
-academic/cpp/        as mesmas estruturas em C++ (aulas de AED)
+academic/c/          as mesmas estruturas em C11 (aulas de AED)
 tests/parity/        fixtures comuns às duas implementações
 docs/                decisões (ADR), complexidade, concorrência, checklists
-scripts/paridade.py  comparador C++ x Java, ligado ao `mvnw verify`
+scripts/paridade.py  comparador C11 x Java, ligado ao `mvnw verify`
 ```
 
 Cada feature tem `dominio/`, `aplicacao/`, `apresentacao/` e `infraestrutura/` —
@@ -186,7 +186,7 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
 - `docs/adr/` — decisões de arquitetura e o que dispara a revisão de cada uma
 - `docs/complexidade-u1.md` — Big-O medido na implementação real
-- `docs/equivalencia-cpp-java.md` — tabela ponteiro C++ ↔ referência Java
+- documentação formal de equivalência C ↔ Java será consolidada em etapa posterior
 - `docs/concorrencia.md` — os pontos de concorrência e como são testados
 - `docs/versionamento-api.md` — regra de mudança de contrato
 - `docs/checklist-pronto-para-demo.md` — checagem na véspera de cada entrega
@@ -197,8 +197,8 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 | Nome | E-mail institucional | Área |
 |---|---|---|
 | _preencher_ | _@cesar.school_ | Domínio e persistência |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C++ e Java) |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C++ e Java) |
+| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
+| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
 | _preencher_ | _@cesar.school_ | API e integração |
 | _preencher_ | _@cesar.school_ | Frontend e painéis |
 | _preencher_ | _@cesar.school_ | Infraestrutura, CI/CD e telemetria |

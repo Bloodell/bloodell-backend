@@ -14,6 +14,8 @@ public class FilaRequisicoes {
         this.quantidade = 0;
     }
 
+    // As tres cabecas/caudas e os proximo dos nos correspondem aos ponteiros C.
+    // Em Java, null representa NULL; os nos sao criados com new e ficam para o GC, sem free manual.
     public void enfileirar(RequisicaoAed requisicao) {
         if (requisicao == null) {
             throw new IllegalArgumentException("Nao e possivel enfileirar requisicao nula.");
@@ -55,7 +57,7 @@ public class FilaRequisicoes {
         return null;
     }
 
-    public RequisicaoAed[] paraVetor() {
+    public RequisicaoAed[] listar() {
         RequisicaoAed[] itens = new RequisicaoAed[quantidade];
         int indice = 0;
         for (int faixa = 0; faixa < PRIORIDADES.length; faixa++) {
@@ -69,6 +71,10 @@ public class FilaRequisicoes {
         return itens;
     }
 
+    public RequisicaoAed[] paraVetor() {
+        return listar();
+    }
+
     public int tamanho() {
         return quantidade;
     }
@@ -79,6 +85,12 @@ public class FilaRequisicoes {
 
     public void limpar() {
         for (int faixa = 0; faixa < PRIORIDADES.length; faixa++) {
+            NoRequisicao atual = cabecas[faixa];
+            while (atual != null) {
+                NoRequisicao proximo = atual.getProximo();
+                atual.setProximo(null);
+                atual = proximo;
+            }
             cabecas[faixa] = null;
             caudas[faixa] = null;
         }

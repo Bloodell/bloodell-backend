@@ -85,4 +85,20 @@ class FilaRequisicoesTest {
         assertThat(fila.tamanho()).isEqualTo(1);
         assertThat(fila.desenfileirar().getCodigo()).isEqualTo("REQ-2");
     }
+
+    @Test
+    @DisplayName("limpar desconecta os nos das tres faixas de prioridade")
+    void limparDesconectaTodasAsFaixas() {
+        FilaRequisicoes fila = new FilaRequisicoes();
+        fila.enfileirar(requisicao("REQ-1", "EMERGENCIA", 1));
+        fila.enfileirar(requisicao("REQ-2", "URGENTE", 2));
+        fila.enfileirar(requisicao("REQ-3", "ELETIVA", 3));
+
+        fila.limpar();
+
+        assertThat(fila.estaVazia()).isTrue();
+        assertThat(fila.listar()).isEmpty();
+        fila.enfileirar(requisicao("REQ-4", "ELETIVA", 4));
+        assertThat(fila.desenfileirar().getCodigo()).isEqualTo("REQ-4");
+    }
 }

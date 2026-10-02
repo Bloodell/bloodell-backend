@@ -10,7 +10,7 @@ primeiro deploy acessível. O provedor ainda não foi escolhido.
 ## Situação atual
 
 - `ci.yml` está completo e rodando: build, testes, integração com Testcontainers,
-  paridade C++ × Java e build da imagem Docker.
+  paridade C11 × Java e build da imagem Docker.
 - `deploy.yml` existe com os passos de publicação **comentados**.
 
 ## Por que os passos estão comentados

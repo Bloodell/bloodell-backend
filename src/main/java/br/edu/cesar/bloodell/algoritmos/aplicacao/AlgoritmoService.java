@@ -86,6 +86,8 @@ public class AlgoritmoService {
 
     @Transactional(readOnly = true)
     public SnapshotDaPilha historico() {
+        // O banco e a fonte de verdade; a pilha e somente uma projecao em memoria
+        // para exibir os eventos persistidos em LIFO sem alterar o historico.
         PilhaHistorico pilha = new PilhaHistorico();
         List<EventoRastreabilidade> cronologicos = eventos.listarNaOrdemCronologica();
         int inicio = Math.max(0, cronologicos.size() - LIMITE_DE_EVENTOS_NA_PILHA);
@@ -117,7 +119,7 @@ public class AlgoritmoService {
         return new SituacaoDoModuloAed(
                 "U1",
                 List.of("ListaEstoque (lista)", "FilaRequisicoes (fila)", "PilhaHistorico (pilha)",
-                        "paridade C++ <-> Java das tres estruturas"),
+                        "paridade C11 <-> Java das tres estruturas"),
                 List.of("MatrizCompatibilidade (ABO/Rh)", "FefoSeletor (insercao ordenada)",
                         "IndiceEstoqueHash (tabela hash manual)", "Roteirizador (vizinho mais proximo)"),
                 "Os itens pendentes existem apenas como interface e stub que lanca "

@@ -62,4 +62,19 @@ class PilhaHistoricoTest {
         assertThat(pilha.desempilhar()).isNull();
         assertThat(pilha.paraVetor()).isEmpty();
     }
+
+    @Test
+    @DisplayName("limpar desconecta os nos e permite empilhar novamente")
+    void limparEReutilizar() {
+        PilhaHistorico pilha = new PilhaHistorico();
+        pilha.empilhar(evento("BL-1", "RECEBIDA"));
+        pilha.empilhar(evento("BL-2", "DISPONIVEL"));
+
+        pilha.limpar();
+
+        assertThat(pilha.estaVazia()).isTrue();
+        assertThat(pilha.listar()).isEmpty();
+        pilha.empilhar(evento("BL-3", "ALOCADA"));
+        assertThat(pilha.topo().getCodigoBolsa()).isEqualTo("BL-3");
+    }
 }

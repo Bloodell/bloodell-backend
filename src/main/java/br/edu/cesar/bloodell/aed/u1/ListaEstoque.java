@@ -14,6 +14,8 @@ public class ListaEstoque {
         this.quantidade = 0;
     }
 
+    // Em C, NoBolsa.proximo e um ponteiro para struct e cabeca NULL encerra a lista.
+    // Aqui a referencia equivalente e null; C usa malloc/free, Java cria o no e o GC o recolhe.
     public void inserir(BolsaAed bolsa) {
         if (bolsa == null) {
             throw new IllegalArgumentException("Nao e possivel inserir bolsa nula na lista.");
@@ -78,7 +80,7 @@ public class ListaEstoque {
         return null;
     }
 
-    public BolsaAed[] paraVetor() {
+    public BolsaAed[] listar() {
         BolsaAed[] itens = new BolsaAed[quantidade];
         NoBolsa atual = cabeca;
         int indice = 0;
@@ -90,6 +92,11 @@ public class ListaEstoque {
         return itens;
     }
 
+    /** Alias usado pelo backend para deixar explicita a operacao de listagem. */
+    public BolsaAed[] paraVetor() {
+        return listar();
+    }
+
     public int tamanho() {
         return quantidade;
     }
@@ -99,6 +106,12 @@ public class ListaEstoque {
     }
 
     public void limpar() {
+        NoBolsa atual = cabeca;
+        while (atual != null) {
+            NoBolsa proximo = atual.getProximo();
+            atual.setProximo(null);
+            atual = proximo;
+        }
         cabeca = null;
         cauda = null;
         quantidade = 0;

@@ -1,7 +1,7 @@
 # Complexidade das estruturas — Unidade 1
 
 Os custos abaixo foram lidos **da implementação real** (`aed/u1` em Java e
-`academic/cpp` em C++), não de tabela de livro. Onde Java e C++ diferem, está
+`academic/c` em C11), não de tabela de livro. Onde Java e C diferem, está
 anotado — e eles não diferem em nenhum caso, porque o algoritmo é o mesmo.
 
 `n` = número de elementos na estrutura.
@@ -17,7 +17,7 @@ anotado — e eles não diferem em nenhum caso, porque o algoritmo é o mesmo.
 | `tamanho` | O(1) | contador mantido nas operações de escrita |
 | `paraVetor` | O(n) | copia os n elementos |
 
-Espaço: O(n) nós. Em C++, cada nó é um `new`/`delete` explícito; em Java, o
+Espaço: O(n) nós. Em C, cada nó é um `malloc`/`free` explícito; em Java, o
 coletor de lixo recolhe o nó quando ele deixa de ser referenciado.
 
 **Por que não é O(1) na busca:** não há índice. Esse é justamente o problema que
@@ -59,7 +59,7 @@ Espaço: O(n) nós.
 1. leitura direta do código das duas implementações;
 2. teste com mil elementos (`lista-mil-bolsas.json`), que passa nas duas e
    confirma que nada degrada além do previsto;
-3. os testes em C++ rodam com `-fsanitize=address,undefined`, o que também
+3. os testes em C11 rodam com `-fsanitize=address,undefined`, o que também
    garante que não há vazamento escondendo custo de memória.
 
 ## O que ainda não está aqui

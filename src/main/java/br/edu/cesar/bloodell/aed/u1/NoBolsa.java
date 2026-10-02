@@ -4,6 +4,7 @@ import br.edu.cesar.bloodell.aed.contratos.BolsaAed;
 
 public class NoBolsa {
 
+    // Espelha `struct NoBolsa { Bolsa dado; struct NoBolsa *proximo; }` da versao C.
     private final BolsaAed dado;
     private NoBolsa proximo;
 

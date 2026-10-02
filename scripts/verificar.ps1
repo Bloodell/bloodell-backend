@@ -27,7 +27,7 @@ function Etapa($titulo, $bloco) {
 Etapa "Versoes das ferramentas" { java -version; .\mvnw.cmd -v }
 
 # 'verify' encadeia: testes rapidos -> testes de integracao (precisam de Docker)
-# -> paridade C++ x Java. A primeira execucao baixa o Maven e as dependencias.
+# -> paridade C11 x Java. A primeira execucao baixa o Maven e as dependencias.
 Etapa "Build, testes e paridade" { .\mvnw.cmd -B verify }
 
 Write-Host ""

@@ -10,49 +10,50 @@ import sys
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 FIXTURES = RAIZ / "tests" / "parity" / "fixtures"
 SAIDA = RAIZ / "target" / "paridade"
-CPP = RAIZ / "academic" / "cpp"
-RUNNER = CPP / "build" / "runner"
+C_DIR = RAIZ / "academic" / "c"
+RUNNER = C_DIR / "build" / "runner"
 
 ETAPAS = {"U1": 1, "U2": 2}
 
 
 def compilar_runner() -> None:
-    if shutil.which("make") is None or (shutil.which("g++") is None and shutil.which("clang++") is None):
-        erro("Compilador C++ ou make nao encontrado no PATH.\n"
+    if shutil.which("make") is None or not any(shutil.which(compilador)
+                                                for compilador in ("cc", "gcc", "clang")):
+        erro("Compilador C11 ou make nao encontrado no PATH.\n"
              "        Instale build-essential (Linux), Xcode Command Line Tools (macOS)\n"
              "        ou MSYS2/MinGW (Windows). Para pular a paridade em uma maquina sem\n"
              "        compilador, use: mvnw verify -Psem-paridade (a etapa fica sem evidencia).")
-    print("[paridade] compilando o runner C++...")
-    resultado = subprocess.run(["make", "tudo"], cwd=CPP, capture_output=True, text=True)
+    print("[paridade] compilando o runner C11...")
+    resultado = subprocess.run(["make", "tudo"], cwd=C_DIR, capture_output=True, text=True)
     if resultado.returncode != 0:
-        erro("Falha ao compilar o runner C++:\n" + resultado.stdout + resultado.stderr)
+        erro("Falha ao compilar o runner C11:\n" + resultado.stdout + resultado.stderr)
 
 
-def rodar_testes_cpp() -> None:
-    print("[paridade] rodando os testes C++ das estruturas...")
-    resultado = subprocess.run(["make", "testar"], cwd=CPP, capture_output=True, text=True)
+def rodar_testes_c() -> None:
+    print("[paridade] rodando os testes C11 das estruturas...")
+    resultado = subprocess.run(["make", "testar"], cwd=C_DIR, capture_output=True, text=True)
     if resultado.returncode != 0:
-        erro("Os testes C++ falharam:\n" + resultado.stdout + resultado.stderr)
+        erro("Os testes C11 falharam:\n" + resultado.stdout + resultado.stderr)
     print("          " + resultado.stdout.strip().splitlines()[-1])
 
 
-def executar_no_cpp(comandos: list[str]) -> list[str]:
+def executar_no_c(comandos: list[str]) -> list[str]:
     entrada = "\n".join(comandos) + "\n"
     resultado = subprocess.run([str(RUNNER)], input=entrada, capture_output=True, text=True)
     if resultado.returncode != 0:
-        erro("O runner C++ terminou com erro:\n" + resultado.stderr)
+        erro("O runner C terminou com erro:\n" + resultado.stderr)
     return [linha.rstrip() for linha in resultado.stdout.strip().splitlines()]
 
 
-def comparar(nome: str, cpp: list[str], java: list[str]) -> list[str]:
+def comparar(nome: str, c: list[str], java: list[str]) -> list[str]:
     divergencias = []
-    total = max(len(cpp), len(java))
+    total = max(len(c), len(java))
     for indice in range(total):
-        linha_cpp = cpp[indice] if indice < len(cpp) else "<sem linha>"
+        linha_c = c[indice] if indice < len(c) else "<sem linha>"
         linha_java = java[indice] if indice < len(java) else "<sem linha>"
-        if linha_cpp != linha_java:
+        if linha_c != linha_java:
             divergencias.append(
-                f"  linha {indice + 1}: C++ = {linha_cpp!r} | Java = {linha_java!r}")
+                f"  linha {indice + 1}: C = {linha_c!r} | Java = {linha_java!r}")
             if len(divergencias) >= 10:
                 divergencias.append("  ... (mostrando apenas as 10 primeiras divergencias)")
                 break
@@ -65,7 +66,7 @@ def erro(mensagem: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Paridade C++ <-> Java das estruturas da AED")
+    parser = argparse.ArgumentParser(description="Paridade C11 <-> Java das estruturas da AED")
     parser.add_argument("--etapa", default="U1", choices=sorted(ETAPAS),
                         help="etapa academica vigente (padrao: U1)")
     argumentos = parser.parse_args()
@@ -76,7 +77,7 @@ def main() -> None:
         erro(f"Nenhuma fixture encontrada em {FIXTURES}.")
 
     compilar_runner()
-    rodar_testes_cpp()
+    rodar_testes_c()
     SAIDA.mkdir(parents=True, exist_ok=True)
 
     verificadas = 0
@@ -96,20 +97,20 @@ def main() -> None:
                 f"  O teste ParidadeAedTest nao rodou. Execute 'mvnw verify' (e nao apenas 'mvnw test -Dtest=...').")
             continue
 
-        linhas_cpp = executar_no_cpp(fixture["comandos"])
-        (SAIDA / f"{nome}.cpp.out").write_text("\n".join(linhas_cpp) + "\n", encoding="utf-8")
+        linhas_c = executar_no_c(fixture["comandos"])
+        (SAIDA / f"{nome}.c.out").write_text("\n".join(linhas_c) + "\n", encoding="utf-8")
         linhas_java = [linha.rstrip() for linha in
                        saida_java.read_text(encoding="utf-8").strip().splitlines()]
 
-        divergencias = comparar(nome, linhas_cpp, linhas_java)
+        divergencias = comparar(nome, linhas_c, linhas_java)
         if divergencias:
             falhas.append(f"{nome}: {len(divergencias)} divergencia(s)\n" + "\n".join(divergencias))
         else:
             verificadas += 1
-            print(f"[paridade] {nome}: OK ({len(linhas_cpp)} linhas conferem)")
+            print(f"[paridade] {nome}: OK ({len(linhas_c)} linhas conferem)")
 
     if falhas:
-        erro("paridade C++ <-> Java quebrada.\n\n" + "\n\n".join(falhas))
+        erro("paridade C11 <-> Java quebrada.\n\n" + "\n\n".join(falhas))
 
     if verificadas == 0:
         erro("nenhuma fixture foi verificada. Paridade sem caso executado nao e evidencia.")

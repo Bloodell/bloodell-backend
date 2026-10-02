@@ -12,6 +12,8 @@ public class PilhaHistorico {
         this.quantidade = 0;
     }
 
+    // NoEvento.abaixo equivale ao ponteiro abaixo em C; topo null equivale a topo == NULL.
+    // C libera cada no com free; Java apenas rompe as referencias e deixa a coleta cuidar do objeto.
     public void empilhar(EventoAed evento) {
         if (evento == null) {
             throw new IllegalArgumentException("Nao e possivel empilhar evento nulo.");
@@ -37,7 +39,7 @@ public class PilhaHistorico {
         return topo == null ? null : topo.getDado();
     }
 
-    public EventoAed[] paraVetor() {
+    public EventoAed[] listar() {
         EventoAed[] itens = new EventoAed[quantidade];
         NoEvento atual = topo;
         int indice = 0;
@@ -49,6 +51,10 @@ public class PilhaHistorico {
         return itens;
     }
 
+    public EventoAed[] paraVetor() {
+        return listar();
+    }
+
     public int tamanho() {
         return quantidade;
     }
@@ -58,6 +64,12 @@ public class PilhaHistorico {
     }
 
     public void limpar() {
+        NoEvento atual = topo;
+        while (atual != null) {
+            NoEvento abaixo = atual.getAbaixo();
+            atual.setAbaixo(null);
+            atual = abaixo;
+        }
         topo = null;
         quantidade = 0;
     }
