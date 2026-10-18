@@ -17,7 +17,7 @@ Frontend em repositório separado: `bloodell-frontend`.
 |---|---|
 | Linguagem / framework | Java 25 + Spring Boot 4.1.1 |
 | Build | Maven (via wrapper `mvnw`) |
-| Banco | PostgreSQL 17 |
+| Banco | PostgreSQL 17, publicado apenas em `127.0.0.1:${POSTGRES_PORT:-5432}` no ambiente local |
 | Migrations | Flyway (SQL versionado em `src/main/resources/db/migration`) |
 | Documentação da API | OpenAPI/Swagger (springdoc) |
 | Testes | JUnit Jupiter, Mockito, Testcontainers |
