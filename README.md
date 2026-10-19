@@ -82,6 +82,12 @@ docker compose down -v                          # parar e APAGAR o banco (delibe
 cd academic/c && make testar      # só os testes das estruturas em C11
 ```
 
+O estágio de build do `Dockerfile` executa `./mvnw -B test` antes de empacotar a
+aplicação. Assim, uma falha nos testes rápidos interrompe a construção da imagem.
+Os testes de integração com Testcontainers e a paridade C11 x Java continuam
+como etapas explícitas do `mvnw verify` e da CI, pois exigem recursos adicionais
+que não devem ser executados implicitamente dentro do build da imagem.
+
 No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
 
 > **Wrapper do Maven.** Já está no repositório (`mvnw`, `mvnw.cmd`, `.mvn/`), na
