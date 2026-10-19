@@ -41,12 +41,4 @@ public final class AlgoritmosDaUnidadeDois {
             throw new UnsupportedOperationException(MENSAGEM);
         }
     }
-
-    public static final class RoteirizadorIndisponivel implements Roteirizador {
-        @Override
-        public int[] calcularOrdemDeVisita(double latitudeOrigem, double longitudeOrigem,
-                                           double[] latitudesDestinos, double[] longitudesDestinos) {
-            throw new UnsupportedOperationException(MENSAGEM);
-        }
-    }
 }

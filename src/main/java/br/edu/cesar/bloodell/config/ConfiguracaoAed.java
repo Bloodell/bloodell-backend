@@ -5,6 +5,7 @@ import br.edu.cesar.bloodell.aed.u2.FefoSeletor;
 import br.edu.cesar.bloodell.aed.u2.IndiceEstoqueHash;
 import br.edu.cesar.bloodell.aed.u2.MatrizCompatibilidade;
 import br.edu.cesar.bloodell.aed.u2.Roteirizador;
+import br.edu.cesar.bloodell.aed.u2.VizinhoMaisProximoRoteirizador;
 import br.edu.cesar.bloodell.alocacao.dominio.AlocacaoProvisoriaU1;
 import br.edu.cesar.bloodell.alocacao.dominio.PoliticaDeAlocacao;
 import org.springframework.context.annotation.Bean;
@@ -35,6 +36,6 @@ public class ConfiguracaoAed {
 
     @Bean
     public Roteirizador roteirizador() {
-        return new AlgoritmosDaUnidadeDois.RoteirizadorIndisponivel();
+        return new VizinhoMaisProximoRoteirizador();
     }
 }

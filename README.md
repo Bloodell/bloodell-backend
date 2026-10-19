@@ -108,7 +108,7 @@ src/main/java/br/edu/cesar/bloodell/
   aed/               MÓDULO ACADÊMICO — Java puro, sem Spring e sem JPA
     contratos/       dados simples espelhados em C
     u1/              lista, fila e pilha com nós manuais
-    u2/              SÓ interfaces e stubs indisponíveis
+    u2/              algoritmos U2; vizinho mais próximo implementado
 academic/c/          as mesmas estruturas em C11 (aulas de AED)
 tests/parity/        fixtures comuns às duas implementações
 docs/                decisões (ADR), complexidade, concorrência, checklists
@@ -127,11 +127,14 @@ pastas gigantes por tipo de classe.
 | Alocação | `AlocacaoProvisoriaU1`: primeira bolsa **do mesmo tipo**, pela ordem de chegada | matriz ABO/Rh + FEFO |
 | Ordenação por validade | **não existe** | FEFO por inserção ordenada |
 | Índice de estoque | consulta direta | tabela hash manual |
-| Rota | **não existe** | vizinho mais próximo |
+| Rota | **não existia** | vizinho mais próximo sobre distâncias geográficas |
 
-O pacote `aed/u2` contém apenas interfaces e stubs que lançam
-`UnsupportedOperationException`. O teste `StubsDaUnidadeDoisTest` transforma isso
-em evidência automatizada. `GET /api/v1/algoritmos/situacao` mostra o mesmo pela API.
+Em `aed/u2`, matriz de compatibilidade, FEFO e índice hash continuam como
+interfaces e stubs que lançam `UnsupportedOperationException`. O roteirizador
+usa um grafo completo não direcionado com pesos Haversine e a heurística do
+vizinho mais próximo. A rota estimada pode ser calculada em
+`POST /api/v1/entregas/{id}/roteirizacao` enquanto a entrega estiver planejada.
+`GET /api/v1/algoritmos/situacao` lista os algoritmos implementados e pendentes.
 
 ## Endpoints principais
 
@@ -148,6 +151,7 @@ em evidência automatizada. `GET /api/v1/algoritmos/situacao` mostra o mesmo pel
 | `GET /api/v1/requisicoes/fila` | fila produzida pela estrutura da AED |
 | `POST /api/v1/requisicoes/{id}/alocacoes` | processa e aloca (201 / 409 / 422) |
 | `GET · POST /api/v1/entregas`, `GET · PUT · DELETE /api/v1/entregas/{id}` | planeja, consulta, ajusta ou cancela uma entrega |
+| `POST /api/v1/entregas/{id}/roteirizacao` | calcula e persiste rota geográfica estimada para uma entrega planejada |
 | `POST /api/v1/entregas/{id}/despacho · /inicio-transporte · /conclusao` | avança o fluxo de entrega até o atendimento da requisição |
 | `POST /api/v1/telemetrias` | ingestão assíncrona (202) |
 | `GET /api/v1/telemetrias/metricas` | números da ingestão concorrente (SO) |

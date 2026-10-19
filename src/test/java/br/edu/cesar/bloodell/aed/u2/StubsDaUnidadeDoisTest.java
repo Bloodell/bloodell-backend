@@ -38,13 +38,4 @@ class StubsDaUnidadeDoisTest {
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
-    @Test
-    @DisplayName("roteirizacao ainda nao existe")
-    void roteirizadorIndisponivel() {
-        Roteirizador roteirizador = new AlgoritmosDaUnidadeDois.RoteirizadorIndisponivel();
-
-        assertThatThrownBy(() -> roteirizador.calcularOrdemDeVisita(
-                -8.05, -34.88, new double[]{-8.1}, new double[]{-34.9}))
-                .isInstanceOf(UnsupportedOperationException.class);
-    }
 }

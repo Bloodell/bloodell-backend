@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public final class EntregaDtos {
 
@@ -40,5 +41,12 @@ public final class EntregaDtos {
             Integer tempoEstimadoMin,
             OffsetDateTime iniciadaEm,
             OffsetDateTime concluidaEm) {
+    }
+
+    public record RotaPlanejada(List<ParadaRota> paradas) {
+    }
+
+    public record ParadaRota(int ordem, String tipo, Long unidadeId, String nome,
+                             double latitude, double longitude) {
     }
 }
