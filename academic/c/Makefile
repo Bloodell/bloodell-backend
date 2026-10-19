@@ -3,7 +3,9 @@ CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -O2 -Iinclude
 BUILD := build
 FONTES := src/contratos.c src/lista_estoque.c src/fila_requisicoes.c src/pilha_historico.c
 
-SANITIZER_FLAGS := $(shell printf 'void f(void){}\n' | $(CC) -std=c11 -fsanitize=address,undefined -x c - -c -o /dev/null >/dev/null 2>&1 && printf '%s' '-fsanitize=address,undefined')
+# A sondagem precisa linkar, não só compilar: o MinGW (Windows) aceita a flag,
+# mas não traz libasan/libubsan e falharia apenas no link.
+SANITIZER_FLAGS := $(shell printf 'int main(void){return 0;}\n' | $(CC) -std=c11 -fsanitize=address,undefined -x c - -o sondagem-sanitizer.tmp >/dev/null 2>&1 && printf '%s' '-fsanitize=address,undefined'; rm -f sondagem-sanitizer.tmp sondagem-sanitizer.tmp.exe)
 TEST_CFLAGS := $(CFLAGS) -g $(SANITIZER_FLAGS)
 
 .PHONY: tudo testar limpar

@@ -22,6 +22,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <springdoc.version>3.1.1</springdoc.version>
     <bloodell.etapa.aed>U1</bloodell.etapa.aed>
+    <!-- Sobrescrito no Windows pelo profile "windows"; também aceita -Dbloodell.python=... -->
+    <bloodell.python>python3</bloodell.python>
   </properties>
 
   <dependencies>
@@ -79,6 +81,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-restclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
@@ -131,7 +138,7 @@
             <phase>integration-test</phase>
             <goals><goal>exec</goal></goals>
             <configuration>
-              <executable>python3</executable>
+              <executable>${bloodell.python}</executable>
               <arguments>
                 <argument>${project.basedir}/scripts/paridade.py</argument>
                 <argument>--etapa</argument>
@@ -145,6 +152,17 @@
   </build>
 
   <profiles>
+    <!-- O instalador do Python no Windows cria python.exe, não python3.exe; "python3"
+         ali resolve para o atalho da Microsoft Store, que só imprime uma mensagem. -->
+    <profile>
+      <id>windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <properties>
+        <bloodell.python>python</bloodell.python>
+      </properties>
+    </profile>
     <profile>
       <id>sem-paridade</id>
       <build>
