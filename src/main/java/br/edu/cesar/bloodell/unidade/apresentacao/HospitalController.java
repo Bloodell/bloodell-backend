@@ -38,7 +38,7 @@ public class HospitalController {
     @GetMapping("/{id}")
     @Operation(summary = "Detalha um hospital")
     public UnidadeResposta detalhar(@PathVariable Long id) {
-        return unidadeService.buscar(id);
+        return unidadeService.buscarHospital(id);
     }
 
     @PostMapping
@@ -51,7 +51,7 @@ public class HospitalController {
     @PutMapping("/{id}")
     @Operation(summary = "Atualiza os dados de um hospital")
     public UnidadeResposta atualizar(@PathVariable Long id, @Valid @RequestBody UnidadeRequisicao entrada) {
-        return unidadeService.atualizar(id, entrada);
+        return unidadeService.atualizarHospital(id, entrada);
     }
 
     @DeleteMapping("/{id}")

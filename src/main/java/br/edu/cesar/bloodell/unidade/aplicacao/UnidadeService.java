@@ -10,7 +10,6 @@ import br.edu.cesar.bloodell.unidade.dominio.Hemocentro;
 import br.edu.cesar.bloodell.unidade.dominio.Hospital;
 import br.edu.cesar.bloodell.unidade.dominio.Unidade;
 import br.edu.cesar.bloodell.unidade.infraestrutura.UnidadeRepository;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -28,14 +27,14 @@ public class UnidadeService {
     @Transactional
     public UnidadeResposta cadastrarHospital(UnidadeRequisicao entrada) {
         garantirNomeLivre(entrada.nome());
-        Hospital hospital = new Hospital(entrada.nome(), montarEndereco(entrada), montarCoordenada(entrada));
+        Hospital hospital = new Hospital(entrada.nome(), criarEndereco(entrada), criarCoordenada(entrada));
         return paraResposta(unidades.save(hospital));
     }
 
     @Transactional
     public UnidadeResposta cadastrarHemocentro(UnidadeRequisicao entrada) {
         garantirNomeLivre(entrada.nome());
-        Hemocentro hemocentro = new Hemocentro(entrada.nome(), montarEndereco(entrada), montarCoordenada(entrada));
+        Hemocentro hemocentro = new Hemocentro(entrada.nome(), criarEndereco(entrada), criarCoordenada(entrada));
         return paraResposta(unidades.save(hemocentro));
     }
 
@@ -50,19 +49,23 @@ public class UnidadeService {
     }
 
     @Transactional(readOnly = true)
-    public UnidadeResposta buscar(Long id) {
-        return paraResposta(buscarEntidade(id));
+    public UnidadeResposta buscarHospital(Long id) {
+        return paraResposta(buscarEntidade(id, Hospital.class, "Hospital"));
+    }
+
+    @Transactional(readOnly = true)
+    public UnidadeResposta buscarHemocentro(Long id) {
+        return paraResposta(buscarEntidade(id, Hemocentro.class, "Hemocentro"));
     }
 
     @Transactional
-    public UnidadeResposta atualizar(Long id, UnidadeRequisicao entrada) {
-        Unidade unidade = buscarEntidade(id);
-        unidades.findByNomeIgnoreCase(entrada.nome().trim())
-                .filter(encontrada -> !encontrada.getId().equals(id))
-                .ifPresent(encontrada -> { throw new ConflitoException(
-                        "Ja existe uma unidade chamada " + entrada.nome().trim() + "."); });
-        unidade.atualizar(entrada.nome(), montarEndereco(entrada), montarCoordenada(entrada));
-        return paraResposta(unidade);
+    public UnidadeResposta atualizarHospital(Long id, UnidadeRequisicao entrada) {
+        return atualizar(id, entrada, Hospital.class, "Hospital");
+    }
+
+    @Transactional
+    public UnidadeResposta atualizarHemocentro(Long id, UnidadeRequisicao entrada) {
+        return atualizar(id, entrada, Hemocentro.class, "Hemocentro");
     }
 
     @Transactional
@@ -99,27 +102,45 @@ public class UnidadeService {
                 .orElseThrow(() -> RecursoNaoEncontradoException.de("Unidade", id));
     }
 
+    private Unidade buscarEntidade(Long id, Class<? extends Unidade> tipo, String recurso) {
+        return unidades.findById(id)
+                .filter(tipo::isInstance)
+                .orElseThrow(() -> RecursoNaoEncontradoException.de(recurso, id));
+    }
+
+    private UnidadeResposta atualizar(Long id, UnidadeRequisicao entrada,
+                                      Class<? extends Unidade> tipo, String recurso) {
+        Unidade unidade = buscarEntidade(id, tipo, recurso);
+        garantirNomeLivreParaAtualizacao(id, entrada.nome());
+        unidade.atualizar(entrada.nome(), criarEndereco(entrada), criarCoordenada(entrada));
+        return paraResposta(unidade);
+    }
+
     private void garantirNomeLivre(String nome) {
         if (unidades.findByNomeIgnoreCase(nome.trim()).isPresent()) {
             throw new ConflitoException("Ja existe uma unidade chamada " + nome.trim() + ".");
         }
     }
 
-    private Endereco montarEndereco(UnidadeRequisicao entrada) {
+    private void garantirNomeLivreParaAtualizacao(Long id, String nome) {
+        unidades.findByNomeIgnoreCase(nome.trim())
+                .filter(encontrada -> !encontrada.getId().equals(id))
+                .ifPresent(encontrada -> {
+                    throw new ConflitoException("Ja existe uma unidade chamada " + nome.trim() + ".");
+                });
+    }
+
+    private Endereco criarEndereco(UnidadeRequisicao entrada) {
         return new Endereco(entrada.logradouro(), entrada.numero(), entrada.bairro(),
                 entrada.cidade(), entrada.uf(), entrada.cep());
     }
 
-    private CoordenadaGeo montarCoordenada(UnidadeRequisicao entrada) {
+    private CoordenadaGeo criarCoordenada(UnidadeRequisicao entrada) {
         return new CoordenadaGeo(entrada.latitude(), entrada.longitude());
     }
 
     private List<UnidadeResposta> converter(List<Unidade> lista) {
-        List<UnidadeResposta> respostas = new ArrayList<>(lista.size());
-        for (Unidade unidade : lista) {
-            respostas.add(paraResposta(unidade));
-        }
-        return respostas;
+        return lista.stream().map(UnidadeService::paraResposta).toList();
     }
 
     public static UnidadeResposta paraResposta(Unidade unidade) {
