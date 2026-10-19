@@ -58,6 +58,12 @@ public class EntregaController {
         return entregas.atualizarPlanejamento(id, entrada);
     }
 
+    @PostMapping("/{id}/roteirizacao")
+    @Operation(summary = "Calcula e persiste a rota geografica de uma entrega planejada")
+    public EntregaResposta roteirizar(@PathVariable Long id) {
+        return entregas.roteirizar(id);
+    }
+
     @PostMapping("/{id}/despacho")
     @Operation(summary = "Despacha a entrega e coloca requisicao e veiculo em rota")
     public EntregaResposta despachar(@PathVariable Long id) {
