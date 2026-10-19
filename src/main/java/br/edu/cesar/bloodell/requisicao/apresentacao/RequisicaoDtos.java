@@ -39,6 +39,11 @@ public final class RequisicaoDtos {
             List<@Valid ItemRequisicaoEntrada> itens) {
     }
 
+    public record AtualizacaoRequisicaoEntrada(
+            @NotNull(message = "informe a prioridade")
+            Prioridade prioridade) {
+    }
+
     public record ItemRequisicaoResposta(
             Long id,
             String componente,

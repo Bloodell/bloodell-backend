@@ -95,6 +95,13 @@ public class Requisicao {
         mudarPara(StatusRequisicao.NA_FILA);
     }
 
+    public void alterarPrioridade(Prioridade novaPrioridade) {
+        if (status != StatusRequisicao.NA_FILA) {
+            throw new RegraDeNegocioException("A prioridade so pode ser alterada enquanto a requisicao estiver na fila.");
+        }
+        this.prioridade = Objects.requireNonNull(novaPrioridade, "Requisicao precisa de prioridade.");
+    }
+
     public boolean totalmenteAtendida() {
         for (ItemRequisicao item : itens) {
             if (!item.totalmenteAtendido()) {
