@@ -92,11 +92,7 @@ public class DoacaoService {
     @Transactional(readOnly = true)
     public List<DoacaoResposta> listar() {
         List<Doacao> encontradas = doacoes.findAllByOrderByDataHoraDesc();
-        List<DoacaoResposta> respostas = new ArrayList<>(encontradas.size());
-        for (Doacao doacao : encontradas) {
-            respostas.add(paraResposta(doacao));
-        }
-        return respostas;
+        return encontradas.stream().map(this::paraResposta).toList();
     }
 
     @Transactional(readOnly = true)
@@ -106,12 +102,12 @@ public class DoacaoService {
     }
 
     private DoacaoResposta paraResposta(Doacao doacao) {
-        List<BolsaGeradaResposta> geradas = new ArrayList<>();
-        for (Bolsa bolsa : bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId())) {
-            geradas.add(new BolsaGeradaResposta(bolsa.getId(), bolsa.getCodigo(),
+        List<BolsaGeradaResposta> geradas = bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId())
+                .stream()
+                .map(bolsa -> new BolsaGeradaResposta(bolsa.getId(), bolsa.getCodigo(),
                     bolsa.getComponente().name(), bolsa.getDataValidade().toString(),
-                    bolsa.getStatus().name()));
-        }
+                    bolsa.getStatus().name()))
+                .toList();
         return new DoacaoResposta(doacao.getId(), doacao.getCodigo(), doacao.getHemocentro().getId(),
                 doacao.getTipoSanguineo().formatado(), doacao.getVolumeMl(), doacao.getDataHora(), geradas);
     }

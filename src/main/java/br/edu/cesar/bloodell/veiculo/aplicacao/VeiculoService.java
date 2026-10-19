@@ -11,7 +11,6 @@ import br.edu.cesar.bloodell.veiculo.apresentacao.VeiculoDtos.VeiculoResposta;
 import br.edu.cesar.bloodell.veiculo.dominio.StatusVeiculo;
 import br.edu.cesar.bloodell.veiculo.dominio.Veiculo;
 import br.edu.cesar.bloodell.veiculo.infraestrutura.VeiculoRepository;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -41,11 +40,7 @@ public class VeiculoService {
         List<Veiculo> encontrados = status == null
                 ? veiculos.findAllByOrderByPlaca()
                 : veiculos.findByStatusOrderByPlaca(status);
-        List<VeiculoResposta> respostas = new ArrayList<>(encontrados.size());
-        for (Veiculo veiculo : encontrados) {
-            respostas.add(paraResposta(veiculo));
-        }
-        return respostas;
+        return encontrados.stream().map(VeiculoService::paraResposta).toList();
     }
 
     @Transactional(readOnly = true)

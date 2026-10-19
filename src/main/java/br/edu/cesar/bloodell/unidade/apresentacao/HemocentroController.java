@@ -38,7 +38,7 @@ public class HemocentroController {
     @GetMapping("/{id}")
     @Operation(summary = "Detalha um hemocentro")
     public UnidadeResposta detalhar(@PathVariable Long id) {
-        return unidadeService.buscar(id);
+        return unidadeService.buscarHemocentro(id);
     }
 
     @PostMapping
@@ -51,7 +51,7 @@ public class HemocentroController {
     @PutMapping("/{id}")
     @Operation(summary = "Atualiza os dados de um hemocentro")
     public UnidadeResposta atualizar(@PathVariable Long id, @Valid @RequestBody UnidadeRequisicao entrada) {
-        return unidadeService.atualizar(id, entrada);
+        return unidadeService.atualizarHemocentro(id, entrada);
     }
 
     @DeleteMapping("/{id}")

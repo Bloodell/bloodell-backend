@@ -12,7 +12,6 @@ import br.edu.cesar.bloodell.veiculo.dominio.Veiculo;
 import br.edu.cesar.bloodell.veiculo.infraestrutura.VeiculoRepository;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,9 +39,8 @@ public class AlertaService {
     @Transactional
     public List<AlertaResposta> listarAtivos() {
         detectarFalhasDeComunicacao();
-        List<AlertaResposta> respostas = new ArrayList<>();
-        for (Alerta alerta : alertas.listarAbertos()) {
-            respostas.add(new AlertaResposta(
+        return alertas.listarAbertos().stream()
+                .map(alerta -> new AlertaResposta(
                     alerta.getId(),
                     alerta.getTipo(),
                     alerta.getNivel().name(),
@@ -50,9 +48,8 @@ public class AlertaService {
                     alerta.getVeiculoId(),
                     alerta.getEntregaId(),
                     alerta.getBolsaId(),
-                    alerta.getCriadoEm()));
-        }
-        return respostas;
+                    alerta.getCriadoEm()))
+                .toList();
     }
 
     private void detectarFalhasDeComunicacao() {

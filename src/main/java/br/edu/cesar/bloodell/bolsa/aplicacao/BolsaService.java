@@ -11,7 +11,6 @@ import br.edu.cesar.bloodell.rastreabilidade.dominio.EventoRastreabilidade;
 import br.edu.cesar.bloodell.rastreabilidade.infraestrutura.EventoRastreabilidadeRepository;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,16 +49,14 @@ public class BolsaService {
             throw RecursoNaoEncontradoException.de("Bolsa", bolsaId);
         }
         List<EventoRastreabilidade> registrados = eventos.findByBolsaIdOrderByOcorridoEmAscIdAsc(bolsaId);
-        List<EventoResposta> linhaDoTempo = new ArrayList<>(registrados.size());
-        for (EventoRastreabilidade evento : registrados) {
-            linhaDoTempo.add(new EventoResposta(
+        return registrados.stream()
+                .map(evento -> new EventoResposta(
                     evento.getId(),
                     evento.getStatusAnterior() == null ? null : evento.getStatusAnterior().name(),
                     evento.getStatusNovo().name(),
                     evento.getDescricao(),
-                    evento.getOcorridoEm()));
-        }
-        return linhaDoTempo;
+                    evento.getOcorridoEm()))
+                .toList();
     }
 
     public static BolsaResposta paraResposta(Bolsa bolsa, LocalDate hoje) {

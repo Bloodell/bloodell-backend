@@ -16,7 +16,6 @@ import br.edu.cesar.bloodell.telemetria.infraestrutura.LeituraTelemetriaReposito
 import br.edu.cesar.bloodell.telemetria.infraestrutura.MetricasDeIngestao;
 import br.edu.cesar.bloodell.veiculo.infraestrutura.VeiculoRepository;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,9 +64,8 @@ public class TelemetriaService {
             throw RecursoNaoEncontradoException.de("Veiculo", veiculoId);
         }
         List<LeituraTelemetria> encontradas = leituras.listarPorVeiculoNoPeriodo(veiculoId, de, ate);
-        List<LeituraResposta> respostas = new ArrayList<>(encontradas.size());
-        for (LeituraTelemetria leitura : encontradas) {
-            respostas.add(new LeituraResposta(
+        return encontradas.stream()
+                .map(leitura -> new LeituraResposta(
                     leitura.getId(),
                     leitura.getVeiculo().getId(),
                     leitura.getPosicao().getLatitude(),
@@ -76,9 +74,8 @@ public class TelemetriaService {
                     leitura.getStatusVeiculo(),
                     leitura.getRegistradaEm(),
                     leitura.getRecebidaEm(),
-                    FAIXA_TRANSPORTE.contem(leitura.getTemperaturaCelsius().doubleValue())));
-        }
-        return respostas;
+                    FAIXA_TRANSPORTE.contem(leitura.getTemperaturaCelsius().doubleValue())))
+                .toList();
     }
 
     public MetricasResposta metricas() {
