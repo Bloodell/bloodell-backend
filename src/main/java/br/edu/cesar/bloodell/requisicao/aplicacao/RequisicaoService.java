@@ -96,13 +96,12 @@ public class RequisicaoService {
     public List<ItemDaFilaResposta> estadoDaFila() {
         FilaRequisicoes fila = montarFilaAPartirDoBanco();
         RequisicaoAed[] ordenadas = fila.paraVetor();
-        List<ItemDaFilaResposta> resposta = new ArrayList<>(ordenadas.length);
+        List<ItemDaFilaResposta> respostas = new ArrayList<>(ordenadas.length);
         for (int indice = 0; indice < ordenadas.length; indice++) {
             RequisicaoAed item = ordenadas[indice];
-            resposta.add(new ItemDaFilaResposta(indice + 1, item.getCodigo(), item.getHospital(),
-                    item.getPrioridade(), item.getSequenciaChegada()));
+            respostas.add(criarItemDaFilaResposta(indice, item));
         }
-        return resposta;
+        return respostas;
     }
 
     @Transactional(readOnly = true)
@@ -130,15 +129,14 @@ public class RequisicaoService {
     }
 
     public static RequisicaoResposta paraResposta(Requisicao requisicao) {
-        List<ItemRequisicaoResposta> itens = new ArrayList<>();
-        for (ItemRequisicao item : requisicao.getItens()) {
-            itens.add(new ItemRequisicaoResposta(
+        List<ItemRequisicaoResposta> itens = requisicao.getItens().stream()
+                .map(item -> new ItemRequisicaoResposta(
                     item.getId(),
                     item.getComponente().name(),
                     item.getTipoSolicitado().formatado(),
                     item.getQuantidade(),
-                    item.getQuantidadeAlocada()));
-        }
+                    item.getQuantidadeAlocada()))
+                .toList();
         return new RequisicaoResposta(
                 requisicao.getId(),
                 requisicao.getCodigo(),
@@ -149,5 +147,10 @@ public class RequisicaoService {
                 requisicao.getCriadaEm(),
                 requisicao.getAtendidaEm(),
                 itens);
+    }
+
+    private static ItemDaFilaResposta criarItemDaFilaResposta(int indice, RequisicaoAed item) {
+        return new ItemDaFilaResposta(indice + 1, item.getCodigo(), item.getHospital(),
+                item.getPrioridade(), item.getSequenciaChegada());
     }
 }

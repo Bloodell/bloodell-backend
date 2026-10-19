@@ -6,7 +6,6 @@ import br.edu.cesar.bloodell.compartilhado.excecao.RecursoNaoEncontradoException
 import br.edu.cesar.bloodell.compartilhado.excecao.RegraDeNegocioException;
 import br.edu.cesar.bloodell.config.FiltroDeCorrelacao;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,10 +69,9 @@ public class ManipuladorGlobalDeErros {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ProblemaApi> tratarValidacao(MethodArgumentNotValidException excecao,
                                                        HttpServletRequest requisicao) {
-        List<ProblemaApi.ErroDeCampo> campos = new ArrayList<>();
-        for (FieldError erro : excecao.getBindingResult().getFieldErrors()) {
-            campos.add(new ProblemaApi.ErroDeCampo(erro.getField(), erro.getDefaultMessage()));
-        }
+        List<ProblemaApi.ErroDeCampo> campos = excecao.getBindingResult().getFieldErrors().stream()
+                .map(ManipuladorGlobalDeErros::paraErroDeCampo)
+                .toList();
         return montar("entrada-invalida", "Entrada invalida", HttpStatus.BAD_REQUEST,
                 "Um ou mais campos nao passaram na validacao.", requisicao, campos);
     }
@@ -113,5 +111,9 @@ public class ManipuladorGlobalDeErros {
         ProblemaApi problema = ProblemaApi.de(tipo, titulo, status.value(), detalhe,
                 requisicao.getRequestURI(), FiltroDeCorrelacao.correlacaoAtual(), campos);
         return ResponseEntity.status(status).body(problema);
+    }
+
+    private static ProblemaApi.ErroDeCampo paraErroDeCampo(FieldError erro) {
+        return new ProblemaApi.ErroDeCampo(erro.getField(), erro.getDefaultMessage());
     }
 }

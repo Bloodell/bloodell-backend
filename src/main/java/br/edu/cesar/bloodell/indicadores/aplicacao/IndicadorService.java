@@ -92,20 +92,14 @@ public class IndicadorService {
     }
 
     private List<ContagemPorCategoria> converter(Map<String, Long> contagens) {
-        List<ContagemPorCategoria> lista = new ArrayList<>(contagens.size());
-        for (Map.Entry<String, Long> entrada : contagens.entrySet()) {
-            lista.add(new ContagemPorCategoria(entrada.getKey(), entrada.getValue()));
-        }
-        return lista;
+        return contagens.entrySet().stream()
+                .map(entrada -> new ContagemPorCategoria(entrada.getKey(), entrada.getValue()))
+                .toList();
     }
 
     private double[] valores(Map<String, Long> contagens) {
-        double[] numeros = new double[contagens.size()];
-        int indice = 0;
-        for (Long valor : contagens.values()) {
-            numeros[indice] = valor;
-            indice++;
-        }
-        return numeros;
+        return contagens.values().stream()
+                .mapToDouble(Long::doubleValue)
+                .toArray();
     }
 }
