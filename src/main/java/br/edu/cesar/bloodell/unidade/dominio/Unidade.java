@@ -80,6 +80,12 @@ public abstract class Unidade {
         this.nome = novoNome.trim();
     }
 
+    public void atualizar(String novoNome, Endereco novoEndereco, CoordenadaGeo novaLocalizacao) {
+        renomear(novoNome);
+        this.endereco = Objects.requireNonNull(novoEndereco, "Unidade precisa de endereco.");
+        this.localizacao = Objects.requireNonNull(novaLocalizacao, "Unidade precisa de coordenada.");
+    }
+
     @Override
     public boolean equals(Object outro) {
         if (this == outro) {

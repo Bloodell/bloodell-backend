@@ -12,6 +12,7 @@ import br.edu.cesar.bloodell.unidade.dominio.Unidade;
 import br.edu.cesar.bloodell.unidade.infraestrutura.UnidadeRepository;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +52,45 @@ public class UnidadeService {
     @Transactional(readOnly = true)
     public UnidadeResposta buscar(Long id) {
         return paraResposta(buscarEntidade(id));
+    }
+
+    @Transactional
+    public UnidadeResposta atualizar(Long id, UnidadeRequisicao entrada) {
+        Unidade unidade = buscarEntidade(id);
+        unidades.findByNomeIgnoreCase(entrada.nome().trim())
+                .filter(encontrada -> !encontrada.getId().equals(id))
+                .ifPresent(encontrada -> { throw new ConflitoException(
+                        "Ja existe uma unidade chamada " + entrada.nome().trim() + "."); });
+        unidade.atualizar(entrada.nome(), montarEndereco(entrada), montarCoordenada(entrada));
+        return paraResposta(unidade);
+    }
+
+    @Transactional
+    public void removerHemocentro(Long id) {
+        remover(id, "HEMOCENTRO", "Hemocentro");
+    }
+
+    @Transactional
+    public void removerHospital(Long id) {
+        remover(id, "HOSPITAL", "Hospital");
+    }
+
+    /**
+     * Remove apenas unidades sem historico. Doacoes, bolsas, requisicoes, veiculos e
+     * entregas referenciam a unidade com ON DELETE RESTRICT: apagar a unidade
+     * quebraria a rastreabilidade, entao o banco recusa e a API responde 409.
+     */
+    private void remover(Long id, String tipoEsperado, String recurso) {
+        Unidade unidade = unidades.findById(id)
+                .filter(encontrada -> tipoEsperado.equals(encontrada.tipo()))
+                .orElseThrow(() -> RecursoNaoEncontradoException.de(recurso, id));
+        try {
+            unidades.delete(unidade);
+            unidades.flush();
+        } catch (DataIntegrityViolationException excecao) {
+            throw new ConflitoException(recurso + " " + unidade.getNome()
+                    + " possui registros vinculados e nao pode ser removido(a).");
+        }
     }
 
     @Transactional(readOnly = true)

@@ -9,6 +9,7 @@ import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.ItemDaFilaRe
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.ItemRequisicaoEntrada;
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.ItemRequisicaoResposta;
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.RequisicaoEntrada;
+import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.AtualizacaoRequisicaoEntrada;
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.RequisicaoResposta;
 import br.edu.cesar.bloodell.requisicao.dominio.ItemRequisicao;
 import br.edu.cesar.bloodell.requisicao.dominio.Prioridade;
@@ -70,6 +71,19 @@ public class RequisicaoService {
     @Transactional(readOnly = true)
     public RequisicaoResposta detalhar(Long id) {
         return paraResposta(buscarEntidade(id));
+    }
+
+    @Transactional
+    public RequisicaoResposta atualizar(Long id, AtualizacaoRequisicaoEntrada entrada) {
+        Requisicao requisicao = buscarEntidade(id);
+        requisicao.alterarPrioridade(entrada.prioridade());
+        return paraResposta(requisicao);
+    }
+
+    @Transactional
+    public void cancelar(Long id) {
+        Requisicao requisicao = buscarEntidade(id);
+        requisicao.mudarPara(StatusRequisicao.CANCELADA);
     }
 
     @Transactional(readOnly = true)

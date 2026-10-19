@@ -4,6 +4,7 @@ import br.edu.cesar.bloodell.alocacao.aplicacao.AlocacaoService;
 import br.edu.cesar.bloodell.alocacao.apresentacao.AlocacaoDtos.ResultadoAlocacaoResposta;
 import br.edu.cesar.bloodell.requisicao.aplicacao.RequisicaoService;
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.ItemDaFilaResposta;
+import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.AtualizacaoRequisicaoEntrada;
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.RequisicaoEntrada;
 import br.edu.cesar.bloodell.requisicao.apresentacao.RequisicaoDtos.RequisicaoResposta;
 import br.edu.cesar.bloodell.requisicao.dominio.Prioridade;
@@ -17,8 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -69,6 +72,20 @@ public class RequisicaoController {
     @Operation(summary = "Detalha uma requisicao")
     public RequisicaoResposta detalhar(@PathVariable Long id) {
         return requisicaoService.detalhar(id);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Altera a prioridade de uma requisicao que ainda esta na fila")
+    public RequisicaoResposta atualizar(@PathVariable Long id,
+                                        @Valid @RequestBody AtualizacaoRequisicaoEntrada entrada) {
+        return requisicaoService.atualizar(id, entrada);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Cancela uma requisicao quando a regra de dominio permitir")
+    public ResponseEntity<Void> cancelar(@PathVariable Long id) {
+        requisicaoService.cancelar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/alocacoes")
