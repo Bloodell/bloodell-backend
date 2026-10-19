@@ -36,7 +36,7 @@ public class ManipuladorGlobalDeErros {
     public ResponseEntity<ProblemaApi> tratarRegraDeNegocio(RegraDeNegocioException excecao,
                                                             HttpServletRequest requisicao) {
         return montar("regra-de-negocio", "Regra de negocio violada",
-                HttpStatus.UNPROCESSABLE_ENTITY, excecao.getMessage(), requisicao, null);
+                HttpStatus.UNPROCESSABLE_CONTENT, excecao.getMessage(), requisicao, null);
     }
 
     @ExceptionHandler(ConflitoException.class)
