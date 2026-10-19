@@ -6,6 +6,7 @@ import br.edu.cesar.bloodell.bolsa.dominio.FabricaDeBolsas;
 import br.edu.cesar.bloodell.bolsa.infraestrutura.BolsaRepository;
 import br.edu.cesar.bloodell.compartilhado.dominio.TipoComponente;
 import br.edu.cesar.bloodell.compartilhado.dominio.TipoSanguineo;
+import br.edu.cesar.bloodell.compartilhado.excecao.RecursoNaoEncontradoException;
 import br.edu.cesar.bloodell.compartilhado.excecao.RegraDeNegocioException;
 import br.edu.cesar.bloodell.doacao.apresentacao.DoacaoDtos.BolsaGeradaResposta;
 import br.edu.cesar.bloodell.doacao.apresentacao.DoacaoDtos.DoacaoRequisicao;
@@ -86,6 +87,33 @@ public class DoacaoService {
 
         return new DoacaoResposta(doacao.getId(), doacao.getCodigo(), hemocentro.getId(),
                 tipo.formatado(), doacao.getVolumeMl(), doacao.getDataHora(), geradas);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DoacaoResposta> listar() {
+        List<Doacao> encontradas = doacoes.findAllByOrderByDataHoraDesc();
+        List<DoacaoResposta> respostas = new ArrayList<>(encontradas.size());
+        for (Doacao doacao : encontradas) {
+            respostas.add(paraResposta(doacao));
+        }
+        return respostas;
+    }
+
+    @Transactional(readOnly = true)
+    public DoacaoResposta detalhar(Long id) {
+        return paraResposta(doacoes.findById(id)
+                .orElseThrow(() -> RecursoNaoEncontradoException.de("Doacao", id)));
+    }
+
+    private DoacaoResposta paraResposta(Doacao doacao) {
+        List<BolsaGeradaResposta> geradas = new ArrayList<>();
+        for (Bolsa bolsa : bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId())) {
+            geradas.add(new BolsaGeradaResposta(bolsa.getId(), bolsa.getCodigo(),
+                    bolsa.getComponente().name(), bolsa.getDataValidade().toString(),
+                    bolsa.getStatus().name()));
+        }
+        return new DoacaoResposta(doacao.getId(), doacao.getCodigo(), doacao.getHemocentro().getId(),
+                doacao.getTipoSanguineo().formatado(), doacao.getVolumeMl(), doacao.getDataHora(), geradas);
     }
 
     private String gerarCodigoDoacao() {

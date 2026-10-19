@@ -9,9 +9,11 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,5 +46,18 @@ public class HospitalController {
     public ResponseEntity<UnidadeResposta> cadastrar(@Valid @RequestBody UnidadeRequisicao entrada) {
         UnidadeResposta criado = unidadeService.cadastrarHospital(entrada);
         return ResponseEntity.created(URI.create("/api/v1/hospitais/" + criado.id())).body(criado);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualiza os dados de um hospital")
+    public UnidadeResposta atualizar(@PathVariable Long id, @Valid @RequestBody UnidadeRequisicao entrada) {
+        return unidadeService.atualizar(id, entrada);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Remove um hospital sem registros vinculados")
+    public ResponseEntity<Void> remover(@PathVariable Long id) {
+        unidadeService.removerHospital(id);
+        return ResponseEntity.noContent().build();
     }
 }

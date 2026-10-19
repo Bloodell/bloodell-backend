@@ -18,6 +18,8 @@ public interface BolsaRepository extends JpaRepository<Bolsa, Long> {
 
     boolean existsByCodigo(String codigo);
 
+    List<Bolsa> findByDoacaoIdOrderBySequenciaEntradaAsc(Long doacaoId);
+
     @Query("""
             select b from Bolsa b
             where (:status is null or b.status = :status)

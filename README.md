@@ -138,16 +138,21 @@ em evidência automatizada. `GET /api/v1/algoritmos/situacao` mostra o mesmo pel
 | Método e rota | O que faz |
 |---|---|
 | `POST /api/v1/doacoes` | registra doação e gera as bolsas |
+| `GET /api/v1/doacoes`, `GET /api/v1/doacoes/{id}` | consulta doações e as bolsas geradas (sem PUT/DELETE: preserva a rastreabilidade) |
 | `GET /api/v1/bolsas?status=&componente=&unidadeId=&page=&size=` | lista bolsas |
 | `GET /api/v1/bolsas/{id}/rastreabilidade` | linha do tempo da bolsa |
 | `GET /api/v1/estoques?unidadeId=&componente=` | posição de estoque |
-| `GET · POST /api/v1/hospitais` e `/api/v1/hemocentros` | cadastro de unidades |
+| `GET · POST /api/v1/hospitais` e `/api/v1/hemocentros`, `GET · PUT · DELETE .../{id}` | cadastro de unidades (DELETE responde 409 se houver registros vinculados) |
 | `POST /api/v1/requisicoes` | cria requisição hospitalar |
+| `GET · PUT · DELETE /api/v1/requisicoes/{id}` | consulta, altera a prioridade (só na fila) ou cancela |
 | `GET /api/v1/requisicoes/fila` | fila produzida pela estrutura da AED |
 | `POST /api/v1/requisicoes/{id}/alocacoes` | processa e aloca (201 / 409 / 422) |
+| `GET · POST /api/v1/entregas`, `GET · PUT · DELETE /api/v1/entregas/{id}` | planeja, consulta, ajusta ou cancela uma entrega |
+| `POST /api/v1/entregas/{id}/despacho · /inicio-transporte · /conclusao` | avança o fluxo de entrega até o atendimento da requisição |
 | `POST /api/v1/telemetrias` | ingestão assíncrona (202) |
 | `GET /api/v1/telemetrias/metricas` | números da ingestão concorrente (SO) |
 | `GET /api/v1/alertas` | alertas ativos de cadeia fria e falha de comunicação |
+| `GET · POST /api/v1/veiculos`, `GET · PUT · DELETE /api/v1/veiculos/{id}` | cadastro da frota (base precisa ser hemocentro; veículo em rota não é alterado) |
 | `GET /api/v1/veiculos/{id}/telemetrias?de=&ate=` | histórico de cadeia fria |
 | `GET /api/v1/algoritmos/estoque · /fila · /historico · /situacao` | visualizador |
 | `GET /api/v1/indicadores/estoque · /demanda · /tempos` | painéis descritivos |
