@@ -38,7 +38,7 @@ class EntregaIT extends TesteDeIntegracao {
     @Autowired private VeiculoRepository veiculos;
     @Autowired private RequisicaoRepository requisicoes;
     @Autowired private EntregaRepository entregas;
-    @Autowired private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     @DisplayName("a API planeja, despacha, transporta e conclui uma entrega persistida")
@@ -77,13 +77,13 @@ class EntregaIT extends TesteDeIntegracao {
             assertThat(rota.path("paradas").get(1).path("tipo").asText()).isEqualTo("HOSPITAL");
             assertThat(rota.path("paradas").get(1).path("ordem").asInt()).isEqualTo(1);
             assertThat(rota.path("paradas").get(1).path("unidadeId").asLong()).isEqualTo(hospital.getId());
+            assertThat(objectMapper.readTree(entregas.findById(entregaId).orElseThrow().getRota()))
+                    .isEqualTo(rota);
         } catch (Exception excecao) {
             throw new AssertionError("A rota persistida deve ser JSON valido.", excecao);
         }
         assertThat(entregas.findById(entregaId).orElseThrow().getDistanciaKm().doubleValue())
                 .isEqualTo(((Number) roteirizada.getBody().get("distanciaKm")).doubleValue());
-        assertThat(entregas.findById(entregaId).orElseThrow().getRota())
-                .isEqualTo(roteirizada.getBody().get("rota"));
 
         assertThat(cliente.postForEntity("/api/v1/entregas/" + entregaId + "/despacho", null, Map.class)
                 .getStatusCode()).isEqualTo(HttpStatus.OK);
