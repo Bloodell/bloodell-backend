@@ -3,7 +3,7 @@ name: CI backend
 on:
   push:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 concurrency:
   group: ci-backend-${{ github.ref }}

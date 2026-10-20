@@ -108,8 +108,9 @@ ampliada, sem alegar que foram desenvolvidas originalmente por TDD.
 
 ## Pipeline e deploy
 
-`.github/workflows/ci.yml` roda em cada push e PR para `main`: testa as estruturas
-C11, faz `mvnw verify` (unidade, integração HTTP/PostgreSQL e paridade C11/Java),
+`.github/workflows/ci.yml` roda em cada push de qualquer branch e em PRs para
+`dev` ou `main`: testa as estruturas C11, faz `mvnw verify` (unidade, integração
+HTTP/PostgreSQL e paridade C11/Java),
 publica os relatórios como artefatos e só constrói a imagem após esses jobs
 passarem. A execução vermelha acima prova que a falha bloqueia o build.
 
