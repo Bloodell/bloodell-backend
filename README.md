@@ -260,14 +260,14 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
 ## Integrantes
 
-| Nome | E-mail institucional | Área |
-|---|---|---|
-| _preencher_ | _@cesar.school_ | Domínio e persistência |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | API e integração |
-| _preencher_ | _@cesar.school_ | Frontend e painéis |
-| _preencher_ | _@cesar.school_ | Infraestrutura, CI/CD e telemetria |
+| Nome |
+|---|
+| Arthur Abelardo |
+| Alisson Santana |
+| Gabriel Gomes |
+| Danilo Diniz |
+| Carlos Henrique |
+| Roberto Henrique |
 
 ## Entregas
 
