@@ -19,6 +19,10 @@ na inicialização e verifica `/actuator/health`.
 - O PostgreSQL usa URL interna e `ipAllowList: []`; credenciais são fornecidas pelo
   provedor como variáveis, sem senha no Git. O web service público usa HTTPS na
   borda do Render. O Compose local só publica portas em `127.0.0.1`.
+- A API pública usa somente dados sintéticos. O endpoint que recria o cenário de
+  demonstração fica desligado no Render. O MVP ainda não possui autenticação
+  (ADR-004); antes de publicar dados reais ou manter a API como serviço aberto,
+  a equipe precisa proteger as rotas de escrita.
 - O pipeline da CI executa testes unitários, integração HTTP/PostgreSQL, paridade
   Java/C11 e build Docker. `checksPass` impede deploy se qualquer uma dessas
   verificações falhar. O fluxo vermelho/verde está em `docs/story-map-release-1.md`.

@@ -117,6 +117,8 @@ passarem. A execução vermelha acima prova que a falha bloqueia o build.
 política `checksPass` permite deploy de `main` apenas quando as verificações do
 commit estiverem verdes. O Render reconstrói a imagem do commit com o mesmo
 `Dockerfile`; Flyway atualiza o banco e `/actuator/health` valida a inicialização.
+O ambiente público usa somente dados sintéticos e mantém desligada a rota que
+recria o cenário; a API ainda não tem autenticação (ADR-004).
 
 **URL pública:** pendente da primeira aplicação do Blueprint no Render. Para
 concluir E3, conectar este repositório ao Render, criar o Blueprint a partir de

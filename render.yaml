@@ -13,7 +13,7 @@ services:
       - key: BLOODELL_PORT
         value: "10000"
       - key: BLOODELL_DEMO_HABILITADO
-        value: "true"
+        value: "false"
       - key: RENDER_POSTGRES_INTERNAL_URL
         fromDatabase:
           name: bloodell-pi-db
