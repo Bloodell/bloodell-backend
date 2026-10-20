@@ -27,7 +27,7 @@ Frontend em repositório separado: `bloodell-frontend`.
 Sem Lombok e sem nenhum gerador de boilerplate: construtores, getters, `equals` e
 `hashCode` são escritos à mão.
 
-## De zero à API rodando (≈ 15 minutos)
+## Como rodar — de zero à API (≈ 15 minutos)
 
 Pré-requisitos: **Git**, **Docker Desktop** (ou Docker Engine) e, para o build local,
 **JDK 25**. Compilador C11 (`cc`, `gcc` ou `clang`) e `make` são necessários apenas para
@@ -35,7 +35,7 @@ a paridade da AED.
 
 ```bash
 # 1. clonar
-git clone <url-do-repo> bloodell-backend
+git clone https://github.com/Bloodell/bloodell-backend.git bloodell-backend
 cd bloodell-backend
 
 # 2. criar o arquivo de variáveis a partir do exemplo (o .env nunca é versionado)
@@ -72,7 +72,7 @@ docker compose down                             # parar, preservando os dados
 docker compose down -v                          # parar e APAGAR o banco (deliberado)
 ```
 
-### Build e testes locais (sem Docker para a API)
+## Testes locais (sem Docker para a API)
 
 ```bash
 ./mvnw -B verify          # testes rápidos + integração (Testcontainers) + paridade C11 x Java
@@ -89,6 +89,59 @@ como etapas explícitas do `mvnw verify` e da CI, pois exigem recursos adicionai
 que não devem ser executados implicitamente dentro do build da imagem.
 
 No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
+
+### TDD, histórias e evidências
+
+O [story map da Release 1](docs/story-map-release-1.md) liga US-R1-01 (doação),
+US-R1-02 (fila prioritária) e US-R1-03 (alocação U1) a tarefas e testes unitários,
+de integração PostgreSQL e de aceitação HTTP. As três jornadas de aceitação são
+executadas por `HistoriasReleaseUmIT` no `verify`. O caso novo de componente
+repetido foi desenvolvido em vermelho/verde com commits e execuções verificáveis:
+
+| Etapa | Evidência | Resultado |
+|---|---|---|
+| Vermelho | [CI #19](https://github.com/Bloodell/bloodell-backend/actions/runs/39361848840) | O teste de duplicação falha e o build da imagem é pulado. |
+| Verde | [CI #20](https://github.com/Bloodell/bloodell-backend/actions/runs/39363541316) | Testes, paridade e imagem Docker passam. |
+
+As outras regras já existiam antes deste exercício; sua cobertura foi mapeada e
+ampliada, sem alegar que foram desenvolvidas originalmente por TDD.
+
+## Pipeline e deploy
+
+`.github/workflows/ci.yml` roda em cada push e PR para `main`: testa as estruturas
+C11, faz `mvnw verify` (unidade, integração HTTP/PostgreSQL e paridade C11/Java),
+publica os relatórios como artefatos e só constrói a imagem após esses jobs
+passarem. A execução vermelha acima prova que a falha bloqueia o build.
+
+`render.yaml` descreve um web service Docker e um PostgreSQL interno no Render. A
+política `checksPass` permite deploy de `main` apenas quando as verificações do
+commit estiverem verdes. O Render reconstrói a imagem do commit com o mesmo
+`Dockerfile`; Flyway atualiza o banco e `/actuator/health` valida a inicialização.
+
+**URL pública:** pendente da primeira aplicação do Blueprint no Render. Para
+concluir E3, conectar este repositório ao Render, criar o Blueprint a partir de
+`render.yaml`, fazer merge da branch aprovada em `main` e conferir a URL pública,
+o deploy e o health check. Não apresentar um workflow sem publicação como deploy.
+As decisões e o plano de rollback estão na [ADR-006](docs/adr/ADR-006-deploy-e-provedor.md).
+
+## Decisões da entrega de Infra 2026.2
+
+| Decisão | Motivo e consequência |
+|---|---|
+| Dockerfile multi-stage com JDK no builder e JRE no runtime | Executa testes rápidos no build e mantém compilador/Maven fora da imagem final. |
+| Compose com PostgreSQL saudável antes da API | Um comando sobe banco e API; volumes preservam dados e portas locais ficam em `127.0.0.1`. |
+| Testes por nível na CI | Testes unitários isolam regras, integração/HTTP valida persistência e contrato, e C11/paridade garante a parte acadêmica. |
+| Render Blueprint com `checksPass` | Configuração reproduzível em código; merge em `main` só dispara deploy se os checks passarem. |
+| Credenciais por variáveis de ambiente | Não versiona senhas e mantém o PostgreSQL fora da internet pública. |
+
+## Uso de IA
+
+Codex foi usado como apoio para mapear histórias e testes, escrever o teste
+vermelho e a correção da regra de duplicação, criar os testes de aceitação,
+preparar `render.yaml` e revisar esta documentação. A execução vermelha e a verde
+são runs reais do GitHub Actions. A equipe deve revisar regras, custos,
+configuração do provedor e resultados antes da entrega; IA não substitui essa
+validação nem comprova um deploy ainda não realizado.
 
 > **Wrapper do Maven.** Já está no repositório (`mvnw`, `mvnw.cmd`, `.mvn/`), na
 > versão 3.3.4 com `distributionType=only-script`: não há nenhum `.jar` versionado
@@ -203,7 +256,7 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 - `docs/checklist-pronto-para-demo.md` — checagem na véspera de cada entrega
 - `docs/pendencias-academicas.md` — conflitos do blueprint aguardando os professores
 
-## Equipe
+## Integrantes
 
 | Nome | E-mail institucional | Área |
 |---|---|---|

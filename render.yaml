@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: bloodell-backend-pi
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    autoDeployTrigger: checksPass
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: BLOODELL_PORT
+        value: "10000"
+      - key: BLOODELL_DEMO_HABILITADO
+        value: "true"
+      - key: RENDER_POSTGRES_INTERNAL_URL
+        fromDatabase:
+          name: bloodell-pi-db
+          property: connectionString
+      - key: BLOODELL_DB_USER
+        fromDatabase:
+          name: bloodell-pi-db
+          property: user
+      - key: BLOODELL_DB_PASSWORD
+        fromDatabase:
+          name: bloodell-pi-db
+          property: password
+
+databases:
+  - name: bloodell-pi-db
+    databaseName: bloodell
+    user: bloodell
+    plan: free
+    postgresMajorVersion: "17"
+    region: oregon
+    ipAllowList: []

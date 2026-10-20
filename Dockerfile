@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 WORKDIR /app
 RUN mkdir -p /app/logs && chown bloodell:bloodell /app/logs
 COPY --from=build /src/target/*.jar /app/bloodell.jar
+COPY scripts/start-api.sh /app/start-api.sh
+RUN chmod 555 /app/start-api.sh
 USER bloodell
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/app/bloodell.jar"]
+ENTRYPOINT ["/app/start-api.sh"]

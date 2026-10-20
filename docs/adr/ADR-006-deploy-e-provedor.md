@@ -1,32 +1,40 @@
-# ADR-006 — Deploy: decisão adiada, pipeline preparado
+# ADR-006 — Deploy do backend no Render
 
-**Data:** 19/09/2026 · **Status:** pendente · **Decidem:** equipe (semana 7)
+**Data:** 20/10/2026 · **Status:** decidido para esta entrega
 
-## Contexto
+## Contexto e decisão
 
-A Unidade 1 de Infraestrutura de Software cobra pipeline de CI/CD **e** um
-primeiro deploy acessível. O provedor ainda não foi escolhido.
+O desafio exige que o merge em `main` chegue a um endereço HTTPS público após a
+esteira verde, sem copiar artefatos manualmente. Escolhemos um Blueprint do Render
+(`render.yaml`) com um serviço web Docker e PostgreSQL gerenciado na mesma região.
+O web service acompanha `main` e usa `autoDeployTrigger: checksPass`: o Render só
+inicia o deploy quando as verificações do commit terminam com sucesso. O serviço
+reconstrói a imagem a partir do mesmo `Dockerfile` validado na CI, executa Flyway
+na inicialização e verifica `/actuator/health`.
 
-## Situação atual
+## Razões e limites
 
-- `ci.yml` está completo e rodando: build, testes, integração com Testcontainers,
-  paridade C11 × Java e build da imagem Docker.
-- `deploy.yml` existe com os passos de publicação **comentados**.
+- O Blueprint registra serviço, banco, porta, variáveis e política de deploy em
+  código versionado, de modo que uma nova instalação possa repetir a configuração.
+- O PostgreSQL usa URL interna e `ipAllowList: []`; credenciais são fornecidas pelo
+  provedor como variáveis, sem senha no Git. O web service público usa HTTPS na
+  borda do Render. O Compose local só publica portas em `127.0.0.1`.
+- O pipeline da CI executa testes unitários, integração HTTP/PostgreSQL, paridade
+  Java/C11 e build Docker. `checksPass` impede deploy se qualquer uma dessas
+  verificações falhar. O fluxo vermelho/verde está em `docs/story-map-release-1.md`.
+- O Render reconstrói a imagem do mesmo commit; a imagem não é promovida byte a
+  byte da CI. Esta é uma limitação consciente desta configuração.
+- O plano gratuito pode suspender o serviço por inatividade e o banco gratuito
+  tem prazo de expiração. Antes de uma apresentação, é necessário abrir a URL e
+  confirmar que a aplicação acordou e que o banco continua ativo.
+- Um rollback usa o deploy anterior bem-sucedido no painel do Render. Como Flyway
+  aplica migrações à frente, mudanças de schema incompatíveis exigem plano de
+  restauração do banco; rollback do container sozinho pode não bastar.
 
-## Por que os passos estão comentados
+## Operação pendente
 
-Um deploy meio configurado falha em todo push para `main` e transforma o mural
-de CI em ruído vermelho — exatamente o contrário do que a rubrica pede ao falar
-em "pipeline que não falha aleatoriamente".
-
-## O que falta decidir (semana 7)
-
-1. provedor: Render, Railway ou Fly.io (todos têm camada gratuita suficiente);
-2. onde fica o PostgreSQL gerenciado (Render, Neon ou Supabase);
-3. criar o secret `DEPLOY_TOKEN` no repositório;
-4. descomentar os passos e conferir o health check pós-deploy.
-
-## Restrição que não muda
-
-Borda pública em **HTTPS/443**. Banco em sub-rede privada, sem porta publicada.
-HTTP/80 exposto conta como erro de segurança na avaliação de RSD.
+O Blueprint precisa ser conectado à organização GitHub e aplicado uma vez por
+uma pessoa com acesso ao Render. Depois da primeira implantação, conferir a URL
+pública e registrar no README. Enquanto isso não ocorrer, E3 está implementada
+em código, mas **não demonstrada em produção**. Não se deve apresentar a execução
+verde de um workflow sem deploy como evidência de publicação.
