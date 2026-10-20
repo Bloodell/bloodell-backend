@@ -119,9 +119,10 @@ public class AlgoritmoService {
         return new SituacaoDoModuloAed(
                 "U1",
                 List.of("ListaEstoque (lista)", "FilaRequisicoes (fila)", "PilhaHistorico (pilha)",
-                        "paridade C11 <-> Java das tres estruturas"),
+                        "Roteirizador (vizinho mais proximo; AED-U2)",
+                        "paridade C11 <-> Java das tres estruturas U1"),
                 List.of("MatrizCompatibilidade (ABO/Rh)", "FefoSeletor (insercao ordenada)",
-                        "IndiceEstoqueHash (tabela hash manual)", "Roteirizador (vizinho mais proximo)"),
+                        "IndiceEstoqueHash (tabela hash manual)"),
                 "Os itens pendentes existem apenas como interface e stub que lanca "
                         + "UnsupportedOperationException. Nenhuma linha deles foi implementada.");
     }

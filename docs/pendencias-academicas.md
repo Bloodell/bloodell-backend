@@ -11,11 +11,11 @@ aqui. Este arquivo é a lista que a equipe leva aos professores.
 | C1 | A rubrica de AED U2 é a da planilha (compatibilidade 45 / integração 35 / complexidade 20)? | Não afeta o código da U1. Afeta o backlog da U2. |
 | C2 | Qual rubrica de SO U1 vale? "Robustez do pipeline" será avaliada? | O pipeline foi feito robusto (sem dependência de rede externa nos testes, seed fixo, Testcontainers): atende às duas versões. |
 | C3 | DDD tático é exigido pela disciplina de SO? | O domínio já tem entidades, Value Objects e agregados visíveis. Se for exigido, falta apenas **documentar**, não reescrever. |
-| C4 | A evidência de AED U1 pede "rota e priorização"? Rota não é U2? | A U1 entrega estruturas + testes. Rota **não** foi implementada. Priorização de requisições existe (é da fila) e não se confunde com FEFO. |
+| C4 | A evidência de AED U1 pede "rota e priorização"? Rota não é U2? | A U1 entrega estruturas + testes. O escopo do grafo e a integração do vizinho mais próximo estão documentados em `escopo-grafo-rotas.md`; a priorização de requisições continua sendo responsabilidade da fila e não se confunde com FEFO. |
 | C5 | Conjunto final de métricas do benchmark de RSD? | Ainda não coletado (é da U2). As métricas de ingestão já existem em `/api/v1/telemetrias/metricas`. |
 | C6 | O pipeline da U1 pode antecipar conteúdo da semana 14? | O pipeline já está pronto. Se a resposta for negativa, nada se perde. |
 | C7 | A apresentação de POO (09/11) é separada da final do PI? | Afeta o cronograma, não o código. |
-| C8 | No checkpoint U1, AED entrega só lista/fila/pilha? | É exatamente o que existe. `aed/u2` tem só interface e stub. |
+| C8 | No checkpoint U1, AED entrega só lista/fila/pilha? | Lista, fila e pilha são as estruturas da U1. O roteirizador previsto para U2 está implementado; matriz, FEFO e índice hash permanecem como stubs. |
 | C9 | Células com número serial no roadmap. | Cosmético. Avisar o professor de Projeto. |
 | C10 | Semanas 10–11 são o início da U2 e 15–16 o fechamento? | Afeta o cronograma. |
 
@@ -30,7 +30,7 @@ aqui. Este arquivo é a lista que a equipe leva aos professores.
 | N5 | "FIFO com urgência" admite duas implementações (três filas FIFO ou inserção ordenada) com a **mesma ordem de saída** e Big-O diferente | Três filas FIFO, O(1). A equivalência está provada por teste; trocar não afeta nenhuma outra classe | `FilaRequisicoes` |
 | N6 | O blueprint cita JUnit 5, mas não fixa Java nem Spring Boot; Boot 4 exige Jupiter 6 | Boot 4.1.1 + Java 25 + Jupiter 6, com instruções de reversão em duas linhas | ADR-003 |
 | N7 | `Usuario` está no schema, mas login está fora do MVP | Tabela criada; **sem** entidade, endpoint ou tela. Ponto de extensão preparado e desligado | ADR-004 |
-| N8 | O blueprint não define de qual hemocentro sai a bolsa quando há mais de um | A U1 usa o primeiro cadastrado e **diz isso** nos passos da decisão. Escolher por distância depende de roteirização (U2) | `AlocacaoService` |
+| N8 | O blueprint não define de qual hemocentro sai a bolsa quando há mais de um | A alocação ainda usa o primeiro cadastrado e **diz isso** nos passos da decisão. O roteirizador geográfico foi implementado no planejamento da entrega, mas ainda não participa da seleção da origem da alocação | `AlocacaoService` |
 | N9 | Não havia formato de corpo de erro definido | Envelope único inspirado na RFC 7807 | `ProblemaApi` |
 | N10 | Não havia estratégia de migração de banco | Flyway com SQL versionado e `ddl-auto=validate` | ADR-002 |
 

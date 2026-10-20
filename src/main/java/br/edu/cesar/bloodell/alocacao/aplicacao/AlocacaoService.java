@@ -85,7 +85,7 @@ public class AlocacaoService {
         Long hemocentroId = hemocentros.get(0).getId();
         diario.anotar("origem",
                 "Hemocentro de origem: " + hemocentros.get(0).getNome(),
-                "escolha simples da U1 -- selecao por distancia depende de roteirizacao (U2)");
+                "escolha simples da U1 -- roteirizacao geografica existe, mas ainda nao seleciona a origem da alocacao");
 
         ListaEstoque estoque = montarListaDeEstoque(hemocentroId);
 
