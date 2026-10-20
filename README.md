@@ -201,6 +201,7 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
 - `docs/adr/` — decisões de arquitetura e o que dispara a revisão de cada uma
 - `docs/complexidade-u1.md` — Big-O medido na implementação real
+- `docs/w04-estruturas-base.md` — evidências da W04–W05: estruturas-base, CI/CD e topologia de comunicação
 - documentação formal de equivalência C ↔ Java será consolidada em etapa posterior
 - `docs/concorrencia.md` — os pontos de concorrência e como são testados
 - `docs/versionamento-api.md` — regra de mudança de contrato
