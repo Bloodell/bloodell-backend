@@ -19,6 +19,7 @@ import br.edu.cesar.bloodell.unidade.aplicacao.UnidadeService;
 import br.edu.cesar.bloodell.unidade.dominio.Unidade;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,9 @@ public class DoacaoService {
         OffsetDateTime quando = entrada.dataHora() == null ? OffsetDateTime.now() : entrada.dataHora();
         if (quando.isAfter(OffsetDateTime.now())) {
             throw new RegraDeNegocioException("Data da doacao no futuro nao e aceita.");
+        }
+        if (new HashSet<>(entrada.componentes()).size() != entrada.componentes().size()) {
+            throw new RegraDeNegocioException("Componente repetido na mesma doacao nao e aceito.");
         }
 
         TipoSanguineo tipo = TipoSanguineo.doTextoCompacto(entrada.tipoSanguineo());
