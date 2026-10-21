@@ -20,9 +20,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class ConcorrenciaNaAlocacaoIT extends TesteDeIntegracao {
 
@@ -37,6 +39,11 @@ class ConcorrenciaNaAlocacaoIT extends TesteDeIntegracao {
 
     @Autowired
     private AlocacaoService alocacaoService;
+
+    @BeforeEach
+    void prepararBanco(@Autowired JdbcTemplate jdbc) {
+        limparBanco(jdbc);
+    }
 
     @Test
     @DisplayName("duas alocacoes simultaneas da mesma bolsa: uma vence, a outra falha")

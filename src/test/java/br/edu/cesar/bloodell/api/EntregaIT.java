@@ -33,12 +33,13 @@ import org.springframework.http.ResponseEntity;
 @AutoConfigureTestRestTemplate
 class EntregaIT extends TesteDeIntegracao {
 
+    private static final ObjectMapper JSON = new ObjectMapper();
+
     @Autowired private TestRestTemplate cliente;
     @Autowired private UnidadeRepository unidades;
     @Autowired private VeiculoRepository veiculos;
     @Autowired private RequisicaoRepository requisicoes;
     @Autowired private EntregaRepository entregas;
-    @Autowired private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("a API planeja, despacha, transporta e conclui uma entrega persistida")
@@ -69,7 +70,7 @@ class EntregaIT extends TesteDeIntegracao {
         assertThat(((Number) roteirizada.getBody().get("distanciaKm")).doubleValue())
                 .isEqualTo(distanciaEsperada);
         try {
-            JsonNode rota = objectMapper.readTree((String) roteirizada.getBody().get("rota"));
+            JsonNode rota = JSON.readTree((String) roteirizada.getBody().get("rota"));
             assertThat(rota.path("paradas")).hasSize(2);
             assertThat(rota.path("paradas").get(0).path("tipo").asText()).isEqualTo("HEMOCENTRO");
             assertThat(rota.path("paradas").get(0).path("ordem").asInt()).isZero();
