@@ -113,6 +113,58 @@ No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
 | Rede interna `dados` e portas locais | Publicar API e banco em todas as interfaces | A API e o banco se comunicam pela rede interna. Para desenvolvimento, as portas publicadas ficam vinculadas a `127.0.0.1`. |
 | Healthchecks e `depends_on` com `service_healthy` | Iniciar os serviços sem verificar disponibilidade | A API só começa a iniciar depois que o PostgreSQL aceita conexões. O healthcheck da API consulta `/actuator/health`. |
 | Variáveis de ambiente e `.env` ignorado pelo Git | Colocar credenciais diretamente nos arquivos versionados | O `.env.example` documenta a configuração local. As credenciais reais ficam fora do repositório e devem ser configuradas no ambiente do provedor durante o deploy. |
+
+## Pipeline e deploy na EC2
+
+O workflow `.github/workflows/ci.yml` roda os testes C11 e `./mvnw verify` em
+pushes e pull requests. Somente depois dos dois jobs verdes ele constrói a imagem
+Docker. Em um **push na `main`** (inclusive merge de PR), o mesmo job envia essa
+imagem para a EC2 por SSH, atualiza o checkout de `main`, sobe API e PostgreSQL
+com Compose e exige que `/actuator/health` responda com sucesso. Em PRs, a
+imagem é validada, mas o deploy não ocorre. O antigo workflow de deploy que só
+imprimia um lembrete foi removido.
+
+O ambiente de demonstração usa o IP público atual
+`http://34.235.158.105/actuator/health`; a interface é servida em
+`http://34.235.158.105/`. O IP público automático pode mudar se a instância for
+parada e iniciada novamente. Nesse caso, atualizar `EC2_HOST` e
+`EC2_KNOWN_HOSTS` nas variáveis do repositório e os links desta seção.
+
+Na EC2, `~/bloodell-backend/.env` contém a senha do banco e não entra no Git.
+O `compose.deploy.yaml` versionado escolhe a imagem pelo SHA do commit e ativa
+o perfil `prod`; o volume `postgres-data` preserva os dados entre deploys. A
+Actions usa o secret `EC2_SSH_KEY` e as variáveis `EC2_HOST` e
+`EC2_KNOWN_HOSTS`. Nunca imprimir ou versionar a chave privada. O frontend está
+em outro repositório e sua publicação ainda não faz parte desta esteira.
+
+Para voltar à imagem anterior, localizar no log da Actions o SHA do último
+deploy saudável e, na EC2, executar:
+
+```bash
+cd ~/bloodell-backend
+BLOODELL_IMAGE_TAG=<SHA_ANTERIOR> docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
+curl --fail http://127.0.0.1:8080/actuator/health
+```
+
+O rollback reutiliza uma imagem já carregada na EC2. Não remover imagens antigas
+antes de confirmar o novo deploy. Migrações Flyway incompatíveis podem exigir
+restauração do banco; trocar só a imagem não reverte o schema.
+
+| Decisão | Alternativa considerada | Justificativa |
+|---|---|---|
+| GitHub Actions com `needs` | Deploy em workflow paralelo | Os testes e a imagem precisam concluir antes da publicação; uma execução vermelha não alcança a EC2. |
+| EC2 existente e SSH com chave dedicada | Criar outro serviço no Render | A equipe já tem a EC2 e a URL funcionando; a chave fica em GitHub Secrets e a identidade do servidor é fixada em `EC2_KNOWN_HOSTS`. |
+| Transferir a imagem pelo SHA | Recompilar na EC2 | Publica exatamente a imagem que passou pelo job da esteira e permite voltar a uma versão anterior. |
+| PR para `dev` e promoção de `dev` para `main` | Publicar cada branch | Mantém a integração do grupo em `dev` e reserva o deploy público para merges aprovados em `main`. |
+
+**Limites atuais:** a URL da EC2 usa HTTP, sem HTTPS; a configuração de TLS
+precisa ser concluída para a exigência de RSD. A API ainda não tem autenticação,
+portanto o ambiente público deve conter somente dados sintéticos. O frontend
+estático tem seu próprio processo de publicação e ainda precisa de CI/CD.
+
+As evidências de uma execução vermelha, uma verde com deploy e a URL validada
+devem ser vinculadas aqui após o primeiro merge em `main`. Uma CI verde em PR
+não é evidência de deploy.
 ## Estrutura do projeto
 
 ```
