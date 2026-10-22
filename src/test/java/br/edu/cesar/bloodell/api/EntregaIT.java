@@ -85,7 +85,6 @@ class EntregaIT extends TesteDeIntegracao {
         }
         assertThat(entregas.findById(entregaId).orElseThrow().getDistanciaKm().doubleValue())
                 .isEqualTo(((Number) roteirizada.getBody().get("distanciaKm")).doubleValue());
-
         assertThat(cliente.postForEntity("/api/v1/entregas/" + entregaId + "/despacho", null, Map.class)
                 .getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(cliente.postForEntity("/api/v1/entregas/" + entregaId + "/roteirizacao", null, Map.class)

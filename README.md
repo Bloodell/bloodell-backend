@@ -1,243 +1,562 @@
-# BLOODELL — backend
+# Bloodell — backend
 
-API REST de gestão, distribuição e monitoramento de hemocomponentes.
-Projeto integrador do 3º semestre de Análise e Desenvolvimento de Sistemas — CESAR School — 2026.2.
-Execução da equipe para o tema oficial do PI, "Rota Vital".
+## 1. Objetivo do repositório
 
-> **Aviso acadêmico.** Todos os dados são sintéticos. Não há nenhuma informação real
-> de doador ou de paciente. As regras de compatibilidade sanguínea são didáticas e
-> **não constituem orientação clínica** nem substituem protocolo de hemoterapia.
-> Não há integração com Hemorrede, SUS ou qualquer sistema oficial.
+O Bloodell é um backend acadêmico para demonstrar uma API de gestão,
+distribuição e monitoramento de hemocomponentes. Este README documenta as
+entregas técnicas já disponíveis na branch e fornece um roteiro reproduzível
+para a demonstração.
 
-Frontend em repositório separado: `bloodell-frontend`.
+Os dados usados no projeto são sintéticos e didáticos. Eles não representam
+dados reais de doadores ou pacientes e não substituem protocolos clínicos.
 
-## Tecnologias
+## 2. Sumário das entregas
 
-| Camada | Escolha |
-|---|---|
-| Linguagem / framework | Java 25 + Spring Boot 4.1.1 |
-| Build | Maven (via wrapper `mvnw`) |
-| Banco | PostgreSQL 17, publicado apenas em `127.0.0.1:${POSTGRES_PORT:-5432}` no ambiente local |
-| Migrations | Flyway (SQL versionado em `src/main/resources/db/migration`) |
-| Documentação da API | OpenAPI/Swagger (springdoc) |
-| Testes | JUnit Jupiter, Mockito, Testcontainers |
-| Estruturas de dados (AED) | Java puro + espelho em C11 (`academic/c`) |
-| Infraestrutura | Docker, Docker Compose, GitHub Actions |
+- [E1 — Build Docker com testes e imagem segura](#e1--build-docker-com-testes-e-imagem-segura)
+- [E1-02 — API e PostgreSQL com Docker Compose](#e1-02--api-e-postgresql-com-docker-compose)
+- [Demais entregas](#demais-entregas)
+  - [E2 — TDD](#e2--tdd)
+  - [E3 — Modelo para preenchimento](#e3--modelo-para-preenchimento)
+- [Evidências e prints](#evidências-e-prints)
 
-Sem Lombok e sem nenhum gerador de boilerplate: construtores, getters, `equals` e
-`hashCode` são escritos à mão.
+## 3. Como executar a demonstração
 
-## De zero à API rodando (≈ 15 minutos)
+### 3.1 Pré-requisitos
 
-Pré-requisitos: **Git**, **Docker Desktop** (ou Docker Engine) e, para o build local,
-**JDK 25**. Compilador C11 (`cc`, `gcc` ou `clang`) e `make` são necessários apenas para
-a paridade da AED.
+Instalar:
+
+- **Git for Windows**, para clonar o repositório e executar comandos Git.
+- **Docker Desktop**, com o mecanismo Docker em execução.
+
+O JDK não é necessário para construir a imagem, pois o Dockerfile usa a
+imagem de JDK no estágio de construção. O Docker Desktop deve estar aberto
+antes dos comandos abaixo.
+
+### 3.2 Validar o Docker
+
+No PowerShell, executar:
+
+```powershell
+docker --version
+docker info
+```
+
+O primeiro comando exibe a versão instalada. O segundo confirma se o daemon
+Docker está acessível. Se `docker info` falhar, iniciar o Docker Desktop antes
+de continuar.
+
+### 3.3 Obter o projeto
+
+```powershell
+git clone <URL_DO_REPOSITORIO> bloodell-backend
+Set-Location bloodell-backend
+```
+
+### 3.4 Construir a imagem
+
+```powershell
+docker build -t bloodell-backend:e1 .
+```
+
+Durante a construção, o estágio de build baixa as dependências, disponibiliza
+o código necessário e executa os testes antes de empacotar o JAR. Uma falha
+de teste deve fazer o comando terminar com erro e impedir a criação de uma
+imagem válida.
+
+### 3.5 Conferir a imagem gerada
+
+```powershell
+docker image inspect bloodell-backend:e1
+docker history bloodell-backend:e1
+```
+
+Esses comandos permitem registrar a imagem criada e suas camadas como
+evidência da demonstração.
+
+### 3.6 Executar a aplicação (opcional)
+
+```powershell
+docker run --rm -p 8080:8080 --name bloodell-e1 bloodell-backend:e1
+```
+
+Em outro PowerShell, verificar a aplicação:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/actuator/health
+```
+
+O resultado esperado é uma resposta de saúde da aplicação. Para encerrar,
+pressionar `Ctrl+C` no terminal que executa o container.
+
+## 4. E1 — Build Docker com testes e imagem segura
+
+### Objetivo
+
+Garantir que a imagem Docker só seja produzida depois dos testes unitários e
+que a imagem final contenha apenas o necessário para executar a aplicação.
+Essa separação reduz o tamanho da imagem e evita levar ferramentas ou arquivos
+sensíveis para produção.
+
+### Implementação
+
+O [Dockerfile](./Dockerfile) possui dois estágios:
+
+1. **`builder` (estágio de construção)** — no arquivo, identificado pelo
+   alias `build`. Usa uma imagem JDK, prepara o Maven Wrapper e compila a
+   aplicação.
+2. **Imagem final** — usa uma imagem JRE, que contém somente o ambiente
+   necessário para executar o JAR.
+
+No estágio `builder`, são copiados:
+
+- `src/`, com o código-fonte Java;
+- `tests/parity/fixtures/`, com as entradas usadas pelo
+  `ParidadeAedTest`.
+
+As fixtures são necessárias porque o `ParidadeAedTest` lê esses arquivos para
+executar cenários de paridade das estruturas de dados. Uma *fixture* é um
+arquivo de entrada fixa usado para repetir o mesmo cenário de teste.
+
+A ordem das etapas é importante:
+
+```text
+./mvnw -B -q dependency:go-offline
+./mvnw -B test
+./mvnw -B -DskipTests package
+```
+
+O comando `./mvnw test` é executado antes de gerar ou copiar o JAR. Portanto,
+se um teste unitário falhar, o comando `docker build` falha e não deve
+produzir uma imagem final considerada válida.
+
+O [.dockerignore](./.dockerignore) exclui do contexto de build:
+
+- `.env`, que pode conter variáveis sensíveis;
+- `.git/`;
+- artefatos locais, como `target/`, logs e saídas de testes;
+- diretórios de build do código acadêmico;
+- arquivos de saída de paridade e outros arquivos locais.
+
+Na imagem final são copiados apenas o JRE da imagem-base, o JAR da aplicação e
+as dependências necessárias ao runtime. O código-fonte e as ferramentas de
+build permanecem no estágio intermediário e não são copiados para a imagem
+final. Assim, a imagem final não deve conter:
+
+- código-fonte;
+- Maven ou o compilador JDK;
+- `.env` ou `.git`;
+- segredos ou arquivos pessoais.
+
+### CI e testes de integração
+
+Os testes de integração com PostgreSQL/Testcontainers continuam como gate
+obrigatório da CI. *Gate* é uma etapa que precisa passar para que o pipeline
+aceite a entrega.
+
+Na configuração de CI, `./mvnw -B verify` executa os testes completos,
+incluindo os testes de integração e a paridade C11 x Java. Depois disso, o job
+de imagem executa o `docker build` e depende dos jobs de testes.
+
+Os testes com Testcontainers ficam explicitamente na CI porque precisam de um
+daemon Docker (o serviço que executa containers). Eles não devem depender de
+Docker-in-Docker implícito dentro do build da imagem: o build valida os testes
+unitários com `./mvnw test`, enquanto a CI fornece o ambiente apropriado para
+PostgreSQL/Testcontainers e executa `./mvnw verify`.
+
+![Workflow da CI aprovado: testes, paridade e build da imagem Docker](docs/evidencias/e1/07-ci-workflow-sucesso.png)
+
+### Passo a passo da evidência
+
+1. Executar `docker --version` e `docker info`.
+2. Executar `docker build -t bloodell-backend:e1 .`.
+3. Registrar a saída que mostra a execução de `./mvnw -B test`.
+4. Registrar a conclusão do empacotamento e a criação da imagem.
+5. Executar `docker image inspect` ou `docker history`.
+6. Opcionalmente, executar o container e consultar o health endpoint.
+7. Consultar a execução da CI para evidenciar os testes de integração e o
+   build da imagem como etapas separadas.
+
+### Resultado esperado
+
+- O build termina com sucesso quando os testes unitários passam.
+- A imagem `bloodell-backend:e1` é criada.
+- A aplicação inicia usando o JAR em uma imagem JRE.
+- O build falha se um teste unitário falhar.
+- A CI mantém PostgreSQL/Testcontainers e a paridade como gates explícitos.
+- A imagem final não leva código-fonte, Maven, compilador, `.env`, `.git` ou
+  segredos.
+
+### Evidências relacionadas
+
+- [Dockerfile](./Dockerfile)
+- [.dockerignore](./.dockerignore)
+- [Workflow de CI](./.github/workflows/ci.yml)
+- [Teste de paridade](./src/test/java/br/edu/cesar/bloodell/aed/paridade/ParidadeAedTest.java)
+- [Teste de integração PostgreSQL](./src/test/java/br/edu/cesar/bloodell/suporte/TesteDeIntegracao.java)
+
+#### Prints da demonstração
+
+**1. Docker instalado**
+
+![Docker instalado](docs/evidencias/e1/01-docker-version.png)
+
+**2. Docker em execução**
+
+![Docker em execução](docs/evidencias/e1/02-docker-info.png)
+
+**3. Build executando os testes**
+
+![Build executando os testes](docs/evidencias/e1/03-build-executando-testes.png)
+
+**4. Testes concluídos com sucesso**
+
+![Testes concluídos com sucesso](docs/evidencias/e1/04-build-testes-sucesso.png)
+
+**5. Imagem criada no Docker Desktop**
+
+![Imagem criada no Docker Desktop](docs/evidencias/e1/05-imagem-gerada-docker-desktop.png)
+
+**6. Imagem final sem fontes, Maven, compilador, `.env` ou `.git`**
+
+![Imagem final sem fontes, Maven, compilador, .env ou .git](docs/evidencias/e1/06-imagem-final-sem-fontes-ou-segredos.png)
+
+## E1-02 — API e PostgreSQL com Docker Compose
+
+### Objetivo
+
+Demonstrar a execução local da API junto com o PostgreSQL usando Docker
+Compose, incluindo a aplicação das migrações do banco, a criação de um
+cenário sintético e a preservação dos dados em um volume nomeado.
+
+O escopo desta entrega é **API + PostgreSQL**. A demonstração comprova que os
+dois serviços sobem, ficam saudáveis, atendem requisições e mantêm os dados
+depois que os containers são recriados.
+
+### Pré-requisitos
+
+No ambiente usado para produzir as evidências, foram encontrados:
+
+- Arch Linux;
+- Git;
+- Docker;
+- Docker Compose.
+
+![Sistema operacional e pré-requisitos](docs/evidencias/e1-02/01-os-e-prerequisitos-arch.png)
+
+A demonstração final também pode ser repetida no Windows 11 com o Docker
+Desktop instalado e em execução.
+
+### Configuração local
+
+O projeto fornece o arquivo [.env.example](./.env.example) como modelo de
+configuração. Antes de subir os serviços, criar o arquivo local:
 
 ```bash
-# 1. clonar
-git clone https://github.com/Bloodell/bloodell-backend.git bloodell-backend
-cd bloodell-backend
-
-# 2. criar o arquivo de variáveis a partir do exemplo (o .env nunca é versionado)
 cp .env.example .env
-# edite POSTGRES_PASSWORD e BLOODELL_DB_PASSWORD com o mesmo valor
+```
 
-# 3. subir API + PostgreSQL
-docker compose up --build -d
+O arquivo `.env` deve ser ajustado apenas para o ambiente local e **não deve
+ser versionado**. Ele é ignorado pelo Git e pelo Docker por poder conter
+senhas ou outros valores específicos da máquina.
+
+O `.env.example` contém somente valores de exemplo, como o nome do banco, o
+usuário, as portas e uma senha que deve ser trocada localmente. Ele serve para
+mostrar quais variáveis são necessárias sem expor segredos reais.
+
+![Configuração local baseada no .env.example](docs/evidencias/e1-02/12-configuracao-local-env-example.png)
+
+### Subir os serviços
+
+Na raiz do repositório, executar:
+
+```bash
+docker compose up -d --build
 docker compose ps
+```
 
-# 4. conferir a saúde da aplicação
-curl http://127.0.0.1:8080/actuator/health          # Linux/macOS
-# Invoke-RestMethod http://127.0.0.1:8080/actuator/health   # PowerShell
+O primeiro comando constrói a imagem da API e inicia os serviços em segundo
+plano. O segundo apresenta o estado dos containers. O arquivo
+[compose.yaml](./compose.yaml) define:
 
-# 5. popular o cenário sintético reproduzível
-curl -X POST http://127.0.0.1:8080/api/v1/demonstracoes/cenarios \
+- o serviço `api`, publicado localmente na porta `8080`;
+- o serviço `postgres`, publicado localmente na porta `5432`;
+- verificações de saúde para os dois serviços;
+- a dependência da API em relação ao PostgreSQL saudável;
+- o volume nomeado `postgres-data` para persistir os dados do banco.
+
+![Serviços do Compose saudáveis](docs/evidencias/e1-02/02-servicos-compose-saudaveis.png)
+
+![Status dos serviços com docker compose ps](docs/evidencias/e1-02/05-docker-compose-ps.png)
+
+### Verificar a API e as migrações
+
+Com os serviços em execução, consultar o endpoint de saúde:
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+O resultado esperado é HTTP `200` com o status `UP`. Isso indica que a API
+está respondendo e que a aplicação conseguiu iniciar sua integração com o
+banco.
+
+![API respondendo com Actuator UP](docs/evidencias/e1-02/03-api-actuator-health-up-postman.png)
+
+As migrações são aplicadas automaticamente pela aplicação durante a
+inicialização. O Flyway registra a versão do esquema e informa quando a
+execução foi concluída com sucesso.
+
+![Migrações do banco aplicadas com sucesso](docs/evidencias/e1-02/04-migration-aplicada.png)
+
+### Criar o cenário sintético
+
+Para popular o banco com dados didáticos e reproduzíveis, enviar:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/demonstracoes/cenarios \
   -H "Content-Type: application/json" \
-  -d '{"cenario":"aula","semente":42}'
-
-# 6. abrir a documentação da API
-# http://127.0.0.1:8080/swagger-ui.html
+  -d '{"cenario":"e1-volume","semente":42}'
 ```
 
-**Tempo estimado por etapa:** clonar e configurar, 3 min · primeiro
-`docker compose up --build` (baixa imagens e dependências Maven), 8 a 12 min ·
-validar com o seed, 2 min. A partir da segunda vez, subir leva menos de 1 minuto.
+O cenário usa dados sintéticos e uma semente fixa. A resposta esperada é
+HTTP `201`, com o resumo dos registros criados e os próximos passos de
+consulta.
 
-Comandos do dia a dia:
+![Cenário sintético criado com sucesso](docs/evidencias/e1-02/07-cenario-sintetico-criado.png)
+
+### Verificar o volume e a persistência
+
+O Compose cria um volume nomeado para os dados do PostgreSQL:
 
 ```bash
-docker compose logs -f api                      # acompanhar os logs
-docker compose exec postgres psql -U bloodell -d bloodell   # abrir o banco
-docker compose down                             # parar, preservando os dados
-docker compose down -v                          # parar e APAGAR o banco (deliberado)
+docker volume ls
 ```
 
-### Build e testes locais (sem Docker para a API)
+![Volume nomeado do PostgreSQL](docs/evidencias/e1-02/06-volume-nomeado-postgres.png)
+
+Consultar o estoque antes de recriar os containers:
 
 ```bash
-./mvnw -B verify          # testes rápidos + integração (Testcontainers) + paridade C11 x Java
-./mvnw -B test            # só os testes rápidos (não precisa de Docker)
-./mvnw -B verify -Psem-paridade   # máquina sem compilador C11 (a etapa fica sem evidência)
-
-cd academic/c && make testar      # só os testes das estruturas em C11
+curl http://localhost:8080/api/v1/estoques
 ```
 
-O estágio de build do `Dockerfile` executa `./mvnw -B test` antes de empacotar a
-aplicação. Assim, uma falha nos testes rápidos interrompe a construção da imagem.
-Os testes de integração com Testcontainers e a paridade C11 x Java continuam
-como etapas explícitas do `mvnw verify` e da CI, pois exigem recursos adicionais
-que não devem ser executados implicitamente dentro do build da imagem.
+![Consulta de estoque antes do restart](docs/evidencias/e1-02/08-consulta-estoque-antes-restart.png)
 
-No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
+Parar e remover os containers sem remover o volume:
 
-> **Wrapper do Maven.** Já está no repositório (`mvnw`, `mvnw.cmd`, `.mvn/`), na
-> versão 3.3.4 com `distributionType=only-script`: não há nenhum `.jar` versionado
-> aqui. Na primeira execução, o wrapper baixa o **Maven 3.9.16** do repositório
-> oficial e o guarda em cache — por isso a primeira vez demora mais. Todo mundo
-> na equipe e o CI usam exatamente esse Maven, mesmo quem tiver outra versão
-> instalada na máquina.
->
-> O `.gitattributes` fixa as quebras de linha de `mvnw` e do `Makefile` em LF. Sem
-> isso, um clone no Windows pode gravar CRLF e o build falha com
-> `bad interpreter: /bin/sh^M` ou `missing separator`.
-> 
-## Decisões de containerização
-
-| Decisão | Alternativa considerada | Justificativa |
-|---|---|---|
-| Eclipse Temurin 25: JDK no build e JRE na execução | Usar JDK também na imagem final | Mantém a versão Java do projeto e reduz o tamanho e as ferramentas disponíveis na imagem final. A aplicação roda com usuário sem privilégios de root. |
-| Dockerfile multi-stage | Compilar e executar em um único estágio | Separa compilação e execução. Somente o JAR gerado é copiado do builder para a imagem final, sem fontes ou ferramentas de build. |
-| Testes unitários no builder | Construir a imagem sem executar testes | Uma falha nos testes rápidos interrompe a construção. Integração com PostgreSQL e paridade C11/Java são verificadas separadamente na CI com `./mvnw -B verify`. |
-| Volume nomeado `postgres-data` | Guardar os dados apenas no container | Preserva o banco quando os containers são removidos e recriados. `docker compose down` mantém o volume; `docker compose down -v` remove os dados. |
-| Comunicação pelo nome do serviço `postgres` | Fixar o endereço IP do container | O DNS do Compose permite que a API encontre o banco em `postgres:5432` pela rede `dados`, mesmo quando o IP do container muda. |
-| Rede interna `dados` e portas locais | Publicar API e banco em todas as interfaces | A API e o banco se comunicam pela rede interna. Para desenvolvimento, as portas publicadas ficam vinculadas a `127.0.0.1`. |
-| Healthchecks e `depends_on` com `service_healthy` | Iniciar os serviços sem verificar disponibilidade | A API só começa a iniciar depois que o PostgreSQL aceita conexões. O healthcheck da API consulta `/actuator/health`. |
-| Variáveis de ambiente e `.env` ignorado pelo Git | Colocar credenciais diretamente nos arquivos versionados | O `.env.example` documenta a configuração local. As credenciais reais ficam fora do repositório e devem ser configuradas no ambiente do provedor durante o deploy. |
-## Estrutura do projeto
-
-```
-src/main/java/br/edu/cesar/bloodell/
-  config/            composição Spring, CORS, OpenAPI, correlação de log, extensão de auth
-  compartilhado/     Value Objects, exceções e o envelope de erro da API
-  unidade/ doacao/ bolsa/ estoque/ requisicao/ alocacao/
-  rastreabilidade/ veiculo/ telemetria/ alerta/ indicadores/
-  algoritmos/        inspeção didática das estruturas (visualizador)
-  demonstracao/      cenário sintético reproduzível
-  aed/               MÓDULO ACADÊMICO — Java puro, sem Spring e sem JPA
-    contratos/       dados simples espelhados em C
-    u1/              lista, fila e pilha com nós manuais
-    u2/              algoritmos U2; vizinho mais próximo implementado
-academic/c/          as mesmas estruturas em C11 (aulas de AED)
-tests/parity/        fixtures comuns às duas implementações
-docs/                decisões (ADR), complexidade, concorrência, checklists
-scripts/paridade.py  comparador C11 x Java, ligado ao `mvnw verify`
+```bash
+docker compose down
+docker volume ls
 ```
 
-Cada feature tem `dominio/`, `aplicacao/`, `apresentacao/` e `infraestrutura/` —
-as camadas controller/service/repository existem dentro da feature, e não em
-pastas gigantes por tipo de classe.
+O comando `docker compose down` remove containers, rede e processos do
+Compose, mas preserva o volume nomeado. Não usar `docker compose down -v`
+quando o objetivo for comprovar a persistência.
 
-## Separação Unidade 1 / Unidade 2
+![Volume preservado após docker compose down](docs/evidencias/e1-02/09-volume-preservado-apos-down.png)
 
-| | Unidade 1 (agora) | Unidade 2 (a partir da semana 11) |
-|---|---|---|
-| Estruturas | lista, fila, pilha (implementadas) | — |
-| Alocação | `AlocacaoProvisoriaU1`: primeira bolsa **do mesmo tipo**, pela ordem de chegada | matriz ABO/Rh + FEFO |
-| Ordenação por validade | **não existe** | FEFO por inserção ordenada |
-| Índice de estoque | consulta direta | tabela hash manual |
-| Rota | **não existia** | vizinho mais próximo sobre distâncias geográficas |
+Subir novamente e verificar a saúde dos serviços:
 
-Em `aed/u2`, matriz de compatibilidade, FEFO e índice hash continuam como
-interfaces e stubs que lançam `UnsupportedOperationException`. O roteirizador
-usa um grafo completo não direcionado com pesos Haversine e a heurística do
-vizinho mais próximo. A rota estimada pode ser calculada em
-`POST /api/v1/entregas/{id}/roteirizacao` enquanto a entrega estiver planejada.
-`GET /api/v1/algoritmos/situacao` lista os algoritmos implementados e pendentes.
-
-## Endpoints principais
-
-| Método e rota | O que faz |
-|---|---|
-| `POST /api/v1/doacoes` | registra doação e gera as bolsas |
-| `GET /api/v1/doacoes`, `GET /api/v1/doacoes/{id}` | consulta doações e as bolsas geradas (sem PUT/DELETE: preserva a rastreabilidade) |
-| `GET /api/v1/bolsas?status=&componente=&unidadeId=&page=&size=` | lista bolsas |
-| `GET /api/v1/bolsas/{id}/rastreabilidade` | linha do tempo da bolsa |
-| `GET /api/v1/estoques?unidadeId=&componente=` | posição de estoque |
-| `GET · POST /api/v1/hospitais` e `/api/v1/hemocentros`, `GET · PUT · DELETE .../{id}` | cadastro de unidades (DELETE responde 409 se houver registros vinculados) |
-| `POST /api/v1/requisicoes` | cria requisição hospitalar |
-| `GET · PUT · DELETE /api/v1/requisicoes/{id}` | consulta, altera a prioridade (só na fila) ou cancela |
-| `GET /api/v1/requisicoes/fila` | fila produzida pela estrutura da AED |
-| `POST /api/v1/requisicoes/{id}/alocacoes` | processa e aloca (201 / 409 / 422) |
-| `GET · POST /api/v1/entregas`, `GET · PUT · DELETE /api/v1/entregas/{id}` | planeja, consulta, ajusta ou cancela uma entrega |
-| `POST /api/v1/entregas/{id}/roteirizacao` | calcula e persiste rota geográfica estimada para uma entrega planejada |
-| `POST /api/v1/entregas/{id}/despacho · /inicio-transporte · /conclusao` | avança o fluxo de entrega até o atendimento da requisição |
-| `POST /api/v1/telemetrias` | ingestão assíncrona (202) |
-| `GET /api/v1/telemetrias/metricas` | números da ingestão concorrente (SO) |
-| `GET /api/v1/alertas` | alertas ativos de cadeia fria e falha de comunicação |
-| `GET · POST /api/v1/veiculos`, `GET · PUT · DELETE /api/v1/veiculos/{id}` | cadastro da frota (base precisa ser hemocentro; veículo em rota não é alterado) |
-| `GET /api/v1/veiculos/{id}/telemetrias?de=&ate=` | histórico de cadeia fria |
-| `GET /api/v1/algoritmos/estoque · /fila · /historico · /situacao` | visualizador |
-| `GET /api/v1/indicadores/estoque · /demanda · /tempos` | painéis descritivos |
-| `POST /api/v1/demonstracoes/cenarios` | cenário sintético (`semente: 42`) |
-| `GET /actuator/health` | health check |
-
-Documentação completa e navegável em `/swagger-ui.html`.
-
-### Formato de erro
-
-Todo erro responde no mesmo envelope, inspirado na RFC 7807:
-
-```json
-{
-  "type": "https://bloodell.cesar.school/erros/regra-de-negocio",
-  "title": "Regra de negocio violada",
-  "status": 422,
-  "detail": "A bolsa BL-000012-HEM-7 venceu em 2026-09-10 e nao pode ser reservada.",
-  "instance": "/api/v1/requisicoes/12/alocacoes",
-  "momento": "2026-09-19T21:40:11-03:00",
-  "correlacao": "a1b2c3d4e5f6",
-  "campos": [{ "campo": "quantidade", "mensagem": "deve ser maior que zero" }]
-}
+```bash
+docker compose up -d
+docker compose ps
 ```
 
-O campo `correlacao` é o mesmo valor do cabeçalho `X-Correlacao-Id` e aparece
-entre colchetes em cada linha de log daquela requisição.
+![Serviços saudáveis após o restart](docs/evidencias/e1-02/10-servicos-saudaveis-apos-restart.png)
 
-## Configuração e segredos
+Consultar o mesmo estoque depois da recriação:
 
-Nenhuma senha vai para o Git. As variáveis vêm do `.env` (ignorado) e, no deploy,
-do ambiente do provedor. O `.env.example` documenta todas elas.
-Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
+```bash
+curl http://localhost:8080/api/v1/estoques
+```
 
-## Documentação complementar:
+![Consulta de estoque após o restart](docs/evidencias/e1-02/11-consulta-estoque-apos-restart.png)
 
-- [Story map da Release 1](docs/story-map-release-1.md) — backbone, três histórias, critérios de aceite e tarefas vinculadas ao ClickUp.
+### Resultado esperado
 
-- `docs/adr/` — decisões de arquitetura e o que dispara a revisão de cada uma
-- `docs/complexidade-u1.md` — Big-O medido na implementação real
-- `docs/w04-estruturas-base.md` — evidências da W04–W05: estruturas-base, CI/CD e topologia de comunicação
-- documentação formal de equivalência C ↔ Java será consolidada em etapa posterior
-- `docs/concorrencia.md` — os pontos de concorrência e como são testados
-- `docs/versionamento-api.md` — regra de mudança de contrato
-- `docs/checklist-pronto-para-demo.md` — checagem na véspera de cada entrega
-- `docs/pendencias-academicas.md` — conflitos do blueprint aguardando os professores
+- A API e o PostgreSQL iniciam pelo Docker Compose.
+- Os dois serviços aparecem como saudáveis.
+- O Actuator responde com status `UP`.
+- As migrações do banco são aplicadas durante a inicialização.
+- O cenário sintético é criado com resposta HTTP `201`.
+- O estoque pode ser consultado antes e depois da recriação dos containers.
+- O volume nomeado permanece após `docker compose down`.
+- Os dados do cenário continuam disponíveis depois do novo `docker compose up`.
 
-## Equipe
+## 5. Demais entregas
 
-| Nome | E-mail institucional | Área |
-|---|---|---|
-| _preencher_ | _@cesar.school_ | Domínio e persistência |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | API e integração |
-| _preencher_ | _@cesar.school_ | Frontend e painéis |
-| _preencher_ | _@cesar.school_ | Infraestrutura, CI/CD e telemetria |
+As seções abaixo são modelos reservados para as próximas demonstrações.
+Preencher cada uma com objetivo, passos, resultado esperado e evidências,
+mantendo a mesma linguagem técnica e didática da E1.
 
-## Entregas
+### E2 — TDD
 
-| Entrega | Data | Link | Screencast |
-|---|---|---|---|
-| Entrega 01 | 31/08/2026 | — | — |
-| Entrega 02 | 21/09/2026 | _preencher_ | _preencher_ |
-| Entrega 03 | 19/10/2026 | — | — |
-| Entrega 04 e apresentação | 09/11/2026 | — | — |
+Esta seção registra o progresso documentado da entrega E2 · TDD com base nas
+evidências disponíveis no repositório e na execução registrada. As evidências
+abaixo não comprovam, isoladamente, o atendimento integral da rubrica da
+entrega.
+
+#### Execução dos testes automatizados
+
+Foi executado o comando:
+
+```bash
+./mvnw clean verify
+```
+
+Na execução registrada, o Maven apresentou `BUILD SUCCESS`. O resumo mostrou
+19 testes Java executados, sem falhas, erros ou testes ignorados. Os testes das
+estruturas C11 também foram aprovados, incluindo os testes de paridade entre
+as implementações. Esse resultado comprova o sucesso dessa execução específica
+e não generaliza o resultado para execuções futuras.
+
+![Execução dos testes automatizados](docs/evidencias/e2/01-testes-automatizados-clean-verify.png)
+
+*A imagem comprova a execução registrada de `./mvnw clean verify`, o resumo
+dos testes e a conclusão `BUILD SUCCESS`. O arquivo precisa ser copiado para
+`docs/evidencias/e2/` se ainda não estiver versionado.*
+
+#### Organização dos testes
+
+A estrutura de `src/test/java` contém testes unitários e de integração. Entre
+os arquivos identificados estão:
+
+- [BolsaTest.java](./src/test/java/br/edu/cesar/bloodell/bolsa/BolsaTest.java);
+- [EntregaTest.java](./src/test/java/br/edu/cesar/bloodell/entrega/EntregaTest.java);
+- [AlocacaoProvisoriaU1Test.java](./src/test/java/br/edu/cesar/bloodell/alocacao/AlocacaoProvisoriaU1Test.java);
+- [ConcorrenciaNaAlocacaoIT.java](./src/test/java/br/edu/cesar/bloodell/alocacao/ConcorrenciaNaAlocacaoIT.java);
+- [CadastrosIT.java](./src/test/java/br/edu/cesar/bloodell/api/CadastrosIT.java);
+- [EntregaIT.java](./src/test/java/br/edu/cesar/bloodell/api/EntregaIT.java);
+- [FluxoDaUnidadeUmIT.java](./src/test/java/br/edu/cesar/bloodell/api/FluxoDaUnidadeUmIT.java);
+- [IngestaoDeTelemetriaIT.java](./src/test/java/br/edu/cesar/bloodell/telemetria/IngestaoDeTelemetriaIT.java).
+
+Esses arquivos demonstram a existência de diferentes classes de teste, mas não
+permitem afirmar que cada regra ou história possui cobertura completa.
+
+![Estrutura de testes unitários e de integração](docs/evidencias/e2/02-estrutura-testes-unitarios-integracao.png)
+
+*A imagem comprova a organização de testes unitários e de integração
+identificada. O arquivo precisa ser copiado para `docs/evidencias/e2/` se
+ainda não estiver versionado.*
+
+#### Configuração do PostgreSQL com Testcontainers
+
+O arquivo [TesteDeIntegracao.java](./src/test/java/br/edu/cesar/bloodell/suporte/TesteDeIntegracao.java)
+contém `@SpringBootTest(webEnvironment =
+SpringBootTest.WebEnvironment.RANDOM_PORT)`, `@ActiveProfiles("test")`,
+`@ServiceConnection`, um `PostgreSQLContainer` baseado em `postgres:17` e a
+inicialização explícita do container por `POSTGRES.start()`.
+
+Essa configuração disponibiliza PostgreSQL em container para os testes de
+integração e permite ao Spring Boot configurar a conexão de teste. Os valores
+de banco, usuário e senha mostrados na configuração pertencem ao ambiente de
+teste e não são apresentados como credenciais de produção. A imagem não
+comprova que o container é executado pela CI.
+
+![Configuração PostgreSQL com Testcontainers](docs/evidencias/e2/03-configuracao-postgresql-testcontainers.png)
+
+*A imagem comprova a configuração de integração com PostgreSQL/Testcontainers.
+O arquivo precisa ser copiado para `docs/evidencias/e2/` se ainda não estiver
+versionado.*
+
+#### Cenário de integração da API
+
+O método `consultaDeDoacoes()` de
+[CadastrosIT.java](./src/test/java/br/edu/cesar/bloodell/api/CadastrosIT.java):
+
+1. cria um hemocentro;
+2. registra uma doação por meio da API;
+3. consulta `/api/v1/doacoes` e verifica se a doação aparece na listagem;
+4. consulta `/api/v1/doacoes/{id}`;
+5. verifica o tipo sanguíneo `O-`;
+6. confirma que o detalhe contém duas bolsas geradas; e
+7. verifica que a consulta de uma doação inexistente retorna `404 Not Found`.
+
+Em conjunto com a classe base [TesteDeIntegracao.java](./src/test/java/br/edu/cesar/bloodell/suporte/TesteDeIntegracao.java)
+e com o resultado registrado da execução dos testes, esse cenário demonstra um
+fluxo de integração da API com a persistência configurada para o teste. O
+código do método, isoladamente, não é tratado como prova suficiente de
+persistência.
+
+![Cenário de integração da API e persistência de doações](docs/evidencias/e2/04-teste-integracao-persistencia-doacoes.png)
+
+*A imagem comprova as verificações do cenário de consulta de doações. O arquivo
+precisa ser copiado para `docs/evidencias/e2/` se ainda não estiver
+versionado.*
+
+#### Pendências para concluir a entrega
+
+A rubrica da entrega E2 · TDD ainda exige evidências específicas para:
+
+1. **Story map do PI:** backbone, Release 1 e pelo menos três histórias
+   quebradas em tarefas.
+2. **Testes por tarefa e por história:** testes unitários para cada tarefa de
+   regra, pelo menos um teste de integração com o banco e um teste de
+   aceitação por história.
+3. **Histórico red → green:** registro demonstrando que o teste foi escrito
+   antes da implementação.
+4. **Execução e proteção no fluxo de entrega:** testes executados a cada push e
+   pull request, com falhas bloqueando o merge.
+
+As evidências reunidas até agora cobrem a execução da suíte, a organização dos
+testes, a configuração PostgreSQL/Testcontainers e um cenário de integração
+da API. Elas não comprovam, sozinhas, o atendimento integral aos quatro
+requisitos acima. Portanto, story map, aceitação por história, histórico
+red → green completo e proteção de merge não são marcados como concluídos sem
+evidências específicas no repositório e no GitHub.
+
+### E3 — Modelo para preenchimento
+
+**Objetivo:**
+Descrever aqui o objetivo da entrega.
+
+**Passos:**
+1. Descrever o primeiro passo.
+2. Descrever o segundo passo.
+
+**Resultado esperado:**
+Descrever o resultado verificável.
+
+**Evidências:**
+Inserir links para arquivos, logs, testes e prints.
+
+### E4 — Modelo para preenchimento
+
+**Objetivo:**
+Descrever aqui o objetivo da entrega.
+
+**Passos:**
+1. Descrever o primeiro passo.
+2. Descrever o segundo passo.
+
+**Resultado esperado:**
+Descrever o resultado verificável.
+
+**Evidências:**
+Inserir links para arquivos, logs, testes e prints.
+
+## 6. Evidências e prints
+
+Salvar os prints em uma pasta versionada e exclusiva para a documentação, por
+exemplo:
+
+```text
+docs/evidencias/e1/
+docs/evidencias/e2/
+docs/evidencias/e3/
+```
+
+Usar nomes descritivos e ordenados, como:
+
+```text
+01-docker-versao.png
+02-docker-info.png
+03-build-testes.png
+04-imagem-gerada.png
+05-ci-testcontainers.png
+```
+
+Cada print deve mostrar, quando possível, o comando executado e seu resultado.
+Na seção da entrega correspondente, inserir uma legenda curta e o caminho
+relativo do arquivo. Não salvar `.env`, tokens, senhas, logs com dados
+sensíveis ou qualquer segredo nas evidências.

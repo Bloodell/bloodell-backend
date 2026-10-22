@@ -32,22 +32,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EntregaService {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
-
     private final EntregaRepository entregas;
     private final RequisicaoRepository requisicoes;
     private final VeiculoRepository veiculos;
     private final UnidadeRepository unidades;
     private final Roteirizador roteirizador;
+    private final ObjectMapper json;
 
     public EntregaService(EntregaRepository entregas, RequisicaoRepository requisicoes,
                           VeiculoRepository veiculos, UnidadeRepository unidades,
-                          Roteirizador roteirizador) {
+                          Roteirizador roteirizador, ObjectMapper json) {
         this.entregas = entregas;
         this.requisicoes = requisicoes;
         this.veiculos = veiculos;
         this.unidades = unidades;
         this.roteirizador = roteirizador;
+        this.json = json;
     }
 
     @Transactional
@@ -177,7 +177,7 @@ public class EntregaService {
 
     private String serializarRota(List<ParadaRota> paradas) {
         try {
-            return JSON.writeValueAsString(new RotaPlanejada(paradas));
+            return json.writeValueAsString(new RotaPlanejada(paradas));
         } catch (JsonProcessingException excecao) {
             throw new IllegalStateException("Nao foi possivel serializar a rota calculada.", excecao);
         }
