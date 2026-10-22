@@ -59,6 +59,13 @@ curl -X POST http://127.0.0.1:8080/api/v1/demonstracoes/cenarios \
 # http://127.0.0.1:8080/swagger-ui.html
 ```
 
+O resultado esperado dos passos 3 e 4 está registrado, com commit e data, em
+[docs/evidencias/e1/07-compose-ps.txt](docs/evidencias/e1/07-compose-ps.txt) (API e
+PostgreSQL `healthy`) e
+[docs/evidencias/e1/08-api-resposta.txt](docs/evidencias/e1/08-api-resposta.txt)
+(API respondendo). Para regenerar: `.\scripts\gerar-evidencias.ps1` — ver
+[docs/evidencias/e1/](docs/evidencias/e1/README.md).
+
 **Tempo estimado por etapa:** clonar e configurar, 3 min · primeiro
 `docker compose up --build` (baixa imagens e dependências Maven), 8 a 12 min ·
 validar com o seed, 2 min. A partir da segunda vez, subir leva menos de 1 minuto.
@@ -274,6 +281,7 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 - `docs/concorrencia.md` — os pontos de concorrência e como são testados
 - `docs/versionamento-api.md` — regra de mudança de contrato
 - `docs/checklist-pronto-para-demo.md` — checagem na véspera de cada entrega
+- [`docs/evidencias/e1/`](docs/evidencias/e1/README.md) — E1-04: saídas reais do `docker compose ps` e da API respondendo
 - `docs/pendencias-academicas.md` — conflitos do blueprint aguardando os professores
 
 ## Equipe

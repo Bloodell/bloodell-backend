@@ -1,0 +1,9 @@
+# API e PostgreSQL saudaveis
+# Commit : a10c090 - Merge pull request #13 from Bloodell/ocs/e1-03-container
+# Branch : docs/e1-04-evidencias-container
+# Data   : 2026-10-21 23:27:28 -03:00
+# Comando: docker compose ps
+
+SERVICE    IMAGE                  STATUS                    PORTS
+api        bloodell-backend-api   Up 6 minutes (healthy)    127.0.0.1:8080->8080/tcp
+postgres   postgres:17            Up 33 minutes (healthy)   127.0.0.1:5432->5432/tcp
