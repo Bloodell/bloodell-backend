@@ -392,9 +392,7 @@ mantendo a mesma linguagem técnica e didática da E1.
 ### E2 — TDD
 
 Esta seção registra o progresso documentado da entrega E2 · TDD com base nas
-evidências disponíveis no repositório e na execução registrada. As evidências
-abaixo não comprovam, isoladamente, o atendimento integral da rubrica da
-entrega.
+evidências disponíveis no repositório e na execução registrada.
 
 #### Execução dos testes automatizados
 
