@@ -18,7 +18,7 @@ dados reais de doadores ou pacientes e não substituem protocolos clínicos.
   - [E3 — Modelo para preenchimento](#e3--modelo-para-preenchimento)
 - [Evidências e prints](#evidências-e-prints)
 
-## 3. Como executar a demonstração no Windows 11
+## 3. Como executar a demonstração
 
 ### 3.1 Pré-requisitos
 
