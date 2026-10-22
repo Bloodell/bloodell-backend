@@ -132,10 +132,12 @@ imagem é validada, mas o deploy não ocorre. O antigo workflow de deploy que s�
 imprimia um lembrete foi removido.
 
 O ambiente de demonstração usa o IP público atual
-`http://34.235.158.105/actuator/health`; a interface é servida em
-`http://34.235.158.105/`. O IP público automático pode mudar se a instância for
-parada e iniciada novamente. Nesse caso, atualizar `EC2_HOST` e
-`EC2_KNOWN_HOSTS` nas variáveis do repositório e os links desta seção.
+`https://34.235.158.105/actuator/health`; a interface é servida em
+`https://34.235.158.105/`. O HTTP redireciona para HTTPS. O IP público
+automático pode mudar se a instância for parada e iniciada novamente. Nesse
+caso, atualizar `EC2_HOST` e
+`EC2_KNOWN_HOSTS` nas variáveis do repositório, reemitir o certificado para o
+novo IP e atualizar os links desta seção.
 
 Na EC2, `~/bloodell-backend/.env` contém a senha do banco e não entra no Git.
 O `compose.deploy.yaml` versionado escolhe a imagem pelo SHA do commit e ativa
@@ -165,10 +167,18 @@ restauração do banco; trocar só a imagem não reverte o schema.
 | Transferir a imagem pelo SHA | Recompilar na EC2 | Publica exatamente a imagem que passou pelo job da esteira e permite voltar a uma versão anterior. |
 | PR para `dev` e promoção de `dev` para `main` | Publicar cada branch | Mantém a integração do grupo em `dev` e reserva o deploy público para merges aprovados em `main`. |
 
-**Limites atuais:** a URL da EC2 usa HTTP, sem HTTPS; a configuração de TLS
-precisa ser concluída para a exigência de RSD. A API ainda não tem autenticação,
-portanto o ambiente público deve conter somente dados sintéticos. O frontend
-estático tem seu próprio processo de publicação e ainda precisa de CI/CD.
+O Nginx usa certificado Let's Encrypt para o IP, emitido pelo Certbot 5.8 via
+`webroot`. O certificado dura cerca de seis dias; o timer
+`snap.certbot.renew.timer` tenta renová-lo automaticamente, e o hook
+`/etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh` recarrega o Nginx após
+renovação bem-sucedida. A rota HTTP `/.well-known/acme-challenge/` permanece
+acessível para essa validação. A renovação foi simulada com
+`certbot renew --dry-run --run-deploy-hooks` e passou.
+
+**Limites atuais:** o IP público automático ainda pode mudar após uma parada da
+EC2. A API não tem autenticação, portanto o ambiente público deve conter somente
+dados sintéticos. O frontend estático tem seu próprio processo de publicação e
+ainda precisa de CI/CD.
 
 As evidências de uma execução vermelha, uma verde com deploy e a URL validada
 devem ser vinculadas aqui após o primeiro merge em `main`. Uma CI verde em PR
