@@ -288,12 +288,9 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
 | Nome | E-mail institucional | Área |
 |---|---|---|
-| _preencher_ | _@cesar.school_ | Domínio e persistência |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | API e integração |
-| _preencher_ | _@cesar.school_ | Frontend e painéis |
-| _preencher_ | _@cesar.school_ | Infraestrutura, CI/CD e telemetria |
+| _Danilo Diniz_ | _dgds@cesar.school_ | Algoritmos AED (C e Java) | Infraestrutura, CI/CD e telemetria |
+| _Artur Abelardo_ | _@cesar.school_ | Algoritmos AED (C e Java) | Domínio e persistência |
+| _Carlos Henrique_ | _chcf@cesar.school_ | API e integração | Frontend e painéis |
 
 ## Entregas
 
