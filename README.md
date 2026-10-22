@@ -35,7 +35,7 @@ a paridade da AED.
 
 ```bash
 # 1. clonar
-git clone <url-do-repo> bloodell-backend
+git clone https://github.com/Bloodell/bloodell-backend.git bloodell-backend
 cd bloodell-backend
 
 # 2. criar o arquivo de variáveis a partir do exemplo (o .env nunca é versionado)
@@ -100,7 +100,19 @@ No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
 > O `.gitattributes` fixa as quebras de linha de `mvnw` e do `Makefile` em LF. Sem
 > isso, um clone no Windows pode gravar CRLF e o build falha com
 > `bad interpreter: /bin/sh^M` ou `missing separator`.
+> 
+## Decisões de containerização
 
+| Decisão | Alternativa considerada | Justificativa |
+|---|---|---|
+| Eclipse Temurin 25: JDK no build e JRE na execução | Usar JDK também na imagem final | Mantém a versão Java do projeto e reduz o tamanho e as ferramentas disponíveis na imagem final. A aplicação roda com usuário sem privilégios de root. |
+| Dockerfile multi-stage | Compilar e executar em um único estágio | Separa compilação e execução. Somente o JAR gerado é copiado do builder para a imagem final, sem fontes ou ferramentas de build. |
+| Testes unitários no builder | Construir a imagem sem executar testes | Uma falha nos testes rápidos interrompe a construção. Integração com PostgreSQL e paridade C11/Java são verificadas separadamente na CI com `./mvnw -B verify`. |
+| Volume nomeado `postgres-data` | Guardar os dados apenas no container | Preserva o banco quando os containers são removidos e recriados. `docker compose down` mantém o volume; `docker compose down -v` remove os dados. |
+| Comunicação pelo nome do serviço `postgres` | Fixar o endereço IP do container | O DNS do Compose permite que a API encontre o banco em `postgres:5432` pela rede `dados`, mesmo quando o IP do container muda. |
+| Rede interna `dados` e portas locais | Publicar API e banco em todas as interfaces | A API e o banco se comunicam pela rede interna. Para desenvolvimento, as portas publicadas ficam vinculadas a `127.0.0.1`. |
+| Healthchecks e `depends_on` com `service_healthy` | Iniciar os serviços sem verificar disponibilidade | A API só começa a iniciar depois que o PostgreSQL aceita conexões. O healthcheck da API consulta `/actuator/health`. |
+| Variáveis de ambiente e `.env` ignorado pelo Git | Colocar credenciais diretamente nos arquivos versionados | O `.env.example` documenta a configuração local. As credenciais reais ficam fora do repositório e devem ser configuradas no ambiente do provedor durante o deploy. |
 ## Estrutura do projeto
 
 ```
