@@ -142,7 +142,8 @@ deploy saudável e, na EC2, executar:
 
 ```bash
 cd ~/bloodell-backend
-BLOODELL_IMAGE_TAG=<SHA_ANTERIOR> docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
+sha_anterior='SUBSTITUA_PELO_SHA_DO_DEPLOY_ANTERIOR'
+BLOODELL_IMAGE_TAG="$sha_anterior" docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
 curl --fail http://127.0.0.1:8080/actuator/health
 ```
 
@@ -165,6 +166,7 @@ estático tem seu próprio processo de publicação e ainda precisa de CI/CD.
 As evidências de uma execução vermelha, uma verde com deploy e a URL validada
 devem ser vinculadas aqui após o primeiro merge em `main`. Uma CI verde em PR
 não é evidência de deploy.
+
 ## Estrutura do projeto
 
 ```
