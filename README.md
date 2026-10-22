@@ -78,6 +78,7 @@ docker compose down -v                          # parar e APAGAR o banco (delibe
 ./mvnw -B verify          # testes rápidos + integração (Testcontainers) + paridade C11 x Java
 ./mvnw -B test            # só os testes rápidos (não precisa de Docker)
 ./mvnw -B verify -Psem-paridade   # máquina sem compilador C11 (a etapa fica sem evidência)
+./mvnw -B verify -Dit.test=AceitacaoIT   # só os cenários Gherkin de aceitação (relatório em target/cucumber/)
 
 cd academic/c && make testar      # só os testes das estruturas em C11
 ```
@@ -266,6 +267,7 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 ## Documentação complementar:
 
 - [Story map da Release 1](docs/story-map-release-1.md) — backbone, três histórias, critérios de aceite e tarefas vinculadas ao ClickUp.
+- [Rastreabilidade da Release 1](docs/rastreabilidade-release-1.md) — cada tarefa do story map ligada aos testes unitários, de integração e de aceitação (Gherkin).
 
 - `docs/adr/` — decisões de arquitetura e o que dispara a revisão de cada uma
 - `docs/complexidade-u1.md` — Big-O medido na implementação real
