@@ -33,12 +33,13 @@ import org.springframework.http.ResponseEntity;
 @AutoConfigureTestRestTemplate
 class EntregaIT extends TesteDeIntegracao {
 
+    private static final ObjectMapper JSON = new ObjectMapper();
+
     @Autowired private TestRestTemplate cliente;
     @Autowired private UnidadeRepository unidades;
     @Autowired private VeiculoRepository veiculos;
     @Autowired private RequisicaoRepository requisicoes;
     @Autowired private EntregaRepository entregas;
-    @Autowired private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("a API planeja, despacha, transporta e conclui uma entrega persistida")
@@ -69,7 +70,7 @@ class EntregaIT extends TesteDeIntegracao {
         assertThat(((Number) roteirizada.getBody().get("distanciaKm")).doubleValue())
                 .isEqualTo(distanciaEsperada);
         try {
-            JsonNode rota = objectMapper.readTree((String) roteirizada.getBody().get("rota"));
+            JsonNode rota = JSON.readTree((String) roteirizada.getBody().get("rota"));
             assertThat(rota.path("paradas")).hasSize(2);
             assertThat(rota.path("paradas").get(0).path("tipo").asText()).isEqualTo("HEMOCENTRO");
             assertThat(rota.path("paradas").get(0).path("ordem").asInt()).isZero();
@@ -77,18 +78,13 @@ class EntregaIT extends TesteDeIntegracao {
             assertThat(rota.path("paradas").get(1).path("tipo").asText()).isEqualTo("HOSPITAL");
             assertThat(rota.path("paradas").get(1).path("ordem").asInt()).isEqualTo(1);
             assertThat(rota.path("paradas").get(1).path("unidadeId").asLong()).isEqualTo(hospital.getId());
+            assertThat(JSON.readTree(entregas.findById(entregaId).orElseThrow().getRota()))
+                    .isEqualTo(rota);
         } catch (Exception excecao) {
             throw new AssertionError("A rota persistida deve ser JSON valido.", excecao);
         }
         assertThat(entregas.findById(entregaId).orElseThrow().getDistanciaKm().doubleValue())
                 .isEqualTo(((Number) roteirizada.getBody().get("distanciaKm")).doubleValue());
-        try {
-            assertThat(objectMapper.readTree(entregas.findById(entregaId).orElseThrow().getRota()))
-                    .isEqualTo(objectMapper.readTree((String) roteirizada.getBody().get("rota")));
-        } catch (Exception excecao) {
-            throw new AssertionError("A rota persistida e a rota retornada devem ser JSON valido.", excecao);
-        }
-
         assertThat(cliente.postForEntity("/api/v1/entregas/" + entregaId + "/despacho", null, Map.class)
                 .getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(cliente.postForEntity("/api/v1/entregas/" + entregaId + "/roteirizacao", null, Map.class)
