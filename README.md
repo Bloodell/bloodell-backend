@@ -162,6 +162,8 @@ Docker-in-Docker implícito dentro do build da imagem: o build valida os testes
 unitários com `./mvnw test`, enquanto a CI fornece o ambiente apropriado para
 PostgreSQL/Testcontainers e executa `./mvnw verify`.
 
+![Workflow da CI aprovado: testes, paridade e build da imagem Docker](docs/evidencias/e1/07-ci-workflow-sucesso.png)
+
 ### Passo a passo da evidência
 
 1. Executar `docker --version` e `docker info`.
