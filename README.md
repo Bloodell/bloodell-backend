@@ -15,7 +15,7 @@ dados reais de doadores ou pacientes e não substituem protocolos clínicos.
 - [E1 — Build Docker com testes e imagem segura](#e1--build-docker-com-testes-e-imagem-segura)
 - [E1-02 — API e PostgreSQL com Docker Compose](#e1-02--api-e-postgresql-com-docker-compose)
 - [Demais entregas](#demais-entregas)
-  - [E2 — Modelo para preenchimento](#e2--modelo-para-preenchimento)
+  - [E2 — TDD](#e2--tdd)
   - [E3 — Modelo para preenchimento](#e3--modelo-para-preenchimento)
 - [Evidências e prints](#evidências-e-prints)
 
@@ -389,20 +389,121 @@ As seções abaixo são modelos reservados para as próximas demonstrações.
 Preencher cada uma com objetivo, passos, resultado esperado e evidências,
 mantendo a mesma linguagem técnica e didática da E1.
 
-### E2 — Modelo para preenchimento
+### E2 — TDD
 
-**Objetivo:**
-Descrever aqui o objetivo da entrega.
+Esta seção registra o progresso documentado da entrega E2 · TDD com base nas
+evidências disponíveis no repositório e na execução registrada. As evidências
+abaixo não comprovam, isoladamente, o atendimento integral da rubrica da
+entrega.
 
-**Passos:**
-1. Descrever o primeiro passo.
-2. Descrever o segundo passo.
+#### Execução dos testes automatizados
 
-**Resultado esperado:**
-Descrever o resultado verificável.
+Foi executado o comando:
 
-**Evidências:**
-Inserir links para arquivos, logs, testes e prints.
+```bash
+./mvnw clean verify
+```
+
+Na execução registrada, o Maven apresentou `BUILD SUCCESS`. O resumo mostrou
+19 testes Java executados, sem falhas, erros ou testes ignorados. Os testes das
+estruturas C11 também foram aprovados, incluindo os testes de paridade entre
+as implementações. Esse resultado comprova o sucesso dessa execução específica
+e não generaliza o resultado para execuções futuras.
+
+![Execução dos testes automatizados](docs/evidencias/e2/01-testes-automatizados-clean-verify.png)
+
+*A imagem comprova a execução registrada de `./mvnw clean verify`, o resumo
+dos testes e a conclusão `BUILD SUCCESS`. O arquivo precisa ser copiado para
+`docs/evidencias/e2/` se ainda não estiver versionado.*
+
+#### Organização dos testes
+
+A estrutura de `src/test/java` contém testes unitários e de integração. Entre
+os arquivos identificados estão:
+
+- [BolsaTest.java](./src/test/java/br/edu/cesar/bloodell/bolsa/BolsaTest.java);
+- [EntregaTest.java](./src/test/java/br/edu/cesar/bloodell/entrega/EntregaTest.java);
+- [AlocacaoProvisoriaU1Test.java](./src/test/java/br/edu/cesar/bloodell/alocacao/AlocacaoProvisoriaU1Test.java);
+- [ConcorrenciaNaAlocacaoIT.java](./src/test/java/br/edu/cesar/bloodell/alocacao/ConcorrenciaNaAlocacaoIT.java);
+- [CadastrosIT.java](./src/test/java/br/edu/cesar/bloodell/api/CadastrosIT.java);
+- [EntregaIT.java](./src/test/java/br/edu/cesar/bloodell/api/EntregaIT.java);
+- [FluxoDaUnidadeUmIT.java](./src/test/java/br/edu/cesar/bloodell/api/FluxoDaUnidadeUmIT.java);
+- [IngestaoDeTelemetriaIT.java](./src/test/java/br/edu/cesar/bloodell/telemetria/IngestaoDeTelemetriaIT.java).
+
+Esses arquivos demonstram a existência de diferentes classes de teste, mas não
+permitem afirmar que cada regra ou história possui cobertura completa.
+
+![Estrutura de testes unitários e de integração](docs/evidencias/e2/02-estrutura-testes-unitarios-integracao.png)
+
+*A imagem comprova a organização de testes unitários e de integração
+identificada. O arquivo precisa ser copiado para `docs/evidencias/e2/` se
+ainda não estiver versionado.*
+
+#### Configuração do PostgreSQL com Testcontainers
+
+O arquivo [TesteDeIntegracao.java](./src/test/java/br/edu/cesar/bloodell/suporte/TesteDeIntegracao.java)
+contém `@SpringBootTest(webEnvironment =
+SpringBootTest.WebEnvironment.RANDOM_PORT)`, `@ActiveProfiles("test")`,
+`@ServiceConnection`, um `PostgreSQLContainer` baseado em `postgres:17` e a
+inicialização explícita do container por `POSTGRES.start()`.
+
+Essa configuração disponibiliza PostgreSQL em container para os testes de
+integração e permite ao Spring Boot configurar a conexão de teste. Os valores
+de banco, usuário e senha mostrados na configuração pertencem ao ambiente de
+teste e não são apresentados como credenciais de produção. A imagem não
+comprova que o container é executado pela CI.
+
+![Configuração PostgreSQL com Testcontainers](docs/evidencias/e2/03-configuracao-postgresql-testcontainers.png)
+
+*A imagem comprova a configuração de integração com PostgreSQL/Testcontainers.
+O arquivo precisa ser copiado para `docs/evidencias/e2/` se ainda não estiver
+versionado.*
+
+#### Cenário de integração da API
+
+O método `consultaDeDoacoes()` de
+[CadastrosIT.java](./src/test/java/br/edu/cesar/bloodell/api/CadastrosIT.java):
+
+1. cria um hemocentro;
+2. registra uma doação por meio da API;
+3. consulta `/api/v1/doacoes` e verifica se a doação aparece na listagem;
+4. consulta `/api/v1/doacoes/{id}`;
+5. verifica o tipo sanguíneo `O-`;
+6. confirma que o detalhe contém duas bolsas geradas; e
+7. verifica que a consulta de uma doação inexistente retorna `404 Not Found`.
+
+Em conjunto com a classe base [TesteDeIntegracao.java](./src/test/java/br/edu/cesar/bloodell/suporte/TesteDeIntegracao.java)
+e com o resultado registrado da execução dos testes, esse cenário demonstra um
+fluxo de integração da API com a persistência configurada para o teste. O
+código do método, isoladamente, não é tratado como prova suficiente de
+persistência.
+
+![Cenário de integração da API e persistência de doações](docs/evidencias/e2/04-teste-integracao-persistencia-doacoes.png)
+
+*A imagem comprova as verificações do cenário de consulta de doações. O arquivo
+precisa ser copiado para `docs/evidencias/e2/` se ainda não estiver
+versionado.*
+
+#### Pendências para concluir a entrega
+
+A rubrica da entrega E2 · TDD ainda exige evidências específicas para:
+
+1. **Story map do PI:** backbone, Release 1 e pelo menos três histórias
+   quebradas em tarefas.
+2. **Testes por tarefa e por história:** testes unitários para cada tarefa de
+   regra, pelo menos um teste de integração com o banco e um teste de
+   aceitação por história.
+3. **Histórico red → green:** registro demonstrando que o teste foi escrito
+   antes da implementação.
+4. **Execução e proteção no fluxo de entrega:** testes executados a cada push e
+   pull request, com falhas bloqueando o merge.
+
+As evidências reunidas até agora cobrem a execução da suíte, a organização dos
+testes, a configuração PostgreSQL/Testcontainers e um cenário de integração
+da API. Elas não comprovam, sozinhas, o atendimento integral aos quatro
+requisitos acima. Portanto, story map, aceitação por história, histórico
+red → green completo e proteção de merge não são marcados como concluídos sem
+evidências específicas no repositório e no GitHub.
 
 ### E3 — Modelo para preenchimento
 
