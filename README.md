@@ -25,7 +25,7 @@ dados reais de doadores ou pacientes e não substituem protocolos clínicos.
 
 Instalar:
 
-- **Git for Windows**, para clonar o repositório e executar comandos Git.
+- **Git**, para clonar o repositório e executar comandos Git.
 - **Docker Desktop**, com o mecanismo Docker em execução.
 
 O JDK não é necessário para construir a imagem, pois o Dockerfile usa a
@@ -243,7 +243,7 @@ No ambiente usado para produzir as evidências, foram encontrados:
 
 ![Sistema operacional e pré-requisitos](docs/evidencias/e1-02/01-os-e-prerequisitos-arch.png)
 
-A demonstração final também pode ser repetida no Windows 11 com o Docker
+A demonstração final também pode ser repetida no Windows com o Docker
 Desktop instalado e em execução.
 
 ### Configuração local
