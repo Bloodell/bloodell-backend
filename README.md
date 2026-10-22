@@ -13,6 +13,7 @@ dados reais de doadores ou pacientes e não substituem protocolos clínicos.
 ## 2. Sumário das entregas
 
 - [E1 — Build Docker com testes e imagem segura](#e1--build-docker-com-testes-e-imagem-segura)
+- [E1-02 — API e PostgreSQL com Docker Compose](#e1-02--api-e-postgresql-com-docker-compose)
 - [Demais entregas](#demais-entregas)
   - [E2 — Modelo para preenchimento](#e2--modelo-para-preenchimento)
   - [E3 — Modelo para preenchimento](#e3--modelo-para-preenchimento)
@@ -218,6 +219,169 @@ PostgreSQL/Testcontainers e executa `./mvnw verify`.
 **6. Imagem final sem fontes, Maven, compilador, `.env` ou `.git`**
 
 ![Imagem final sem fontes, Maven, compilador, .env ou .git](docs/evidencias/e1/06-imagem-final-sem-fontes-ou-segredos.png)
+
+## E1-02 — API e PostgreSQL com Docker Compose
+
+### Objetivo
+
+Demonstrar a execução local da API junto com o PostgreSQL usando Docker
+Compose, incluindo a aplicação das migrações do banco, a criação de um
+cenário sintético e a preservação dos dados em um volume nomeado.
+
+O escopo desta entrega é **API + PostgreSQL**. A demonstração comprova que os
+dois serviços sobem, ficam saudáveis, atendem requisições e mantêm os dados
+depois que os containers são recriados.
+
+### Pré-requisitos
+
+No ambiente usado para produzir as evidências, foram encontrados:
+
+- Arch Linux;
+- Git;
+- Docker;
+- Docker Compose.
+
+![Sistema operacional e pré-requisitos](docs/evidencias/e1-02/01-os-e-prerequisitos-arch.png)
+
+A demonstração final também pode ser repetida no Windows 11 com o Docker
+Desktop instalado e em execução.
+
+### Configuração local
+
+O projeto fornece o arquivo [.env.example](./.env.example) como modelo de
+configuração. Antes de subir os serviços, criar o arquivo local:
+
+```bash
+cp .env.example .env
+```
+
+O arquivo `.env` deve ser ajustado apenas para o ambiente local e **não deve
+ser versionado**. Ele é ignorado pelo Git e pelo Docker por poder conter
+senhas ou outros valores específicos da máquina.
+
+O `.env.example` contém somente valores de exemplo, como o nome do banco, o
+usuário, as portas e uma senha que deve ser trocada localmente. Ele serve para
+mostrar quais variáveis são necessárias sem expor segredos reais.
+
+![Configuração local baseada no .env.example](docs/evidencias/e1-02/12-configuracao-local-env-example.png)
+
+### Subir os serviços
+
+Na raiz do repositório, executar:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+O primeiro comando constrói a imagem da API e inicia os serviços em segundo
+plano. O segundo apresenta o estado dos containers. O arquivo
+[compose.yaml](./compose.yaml) define:
+
+- o serviço `api`, publicado localmente na porta `8080`;
+- o serviço `postgres`, publicado localmente na porta `5432`;
+- verificações de saúde para os dois serviços;
+- a dependência da API em relação ao PostgreSQL saudável;
+- o volume nomeado `postgres-data` para persistir os dados do banco.
+
+![Serviços do Compose saudáveis](docs/evidencias/e1-02/02-servicos-compose-saudaveis.png)
+
+![Status dos serviços com docker compose ps](docs/evidencias/e1-02/05-docker-compose-ps.png)
+
+### Verificar a API e as migrações
+
+Com os serviços em execução, consultar o endpoint de saúde:
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
+O resultado esperado é HTTP `200` com o status `UP`. Isso indica que a API
+está respondendo e que a aplicação conseguiu iniciar sua integração com o
+banco.
+
+![API respondendo com Actuator UP](docs/evidencias/e1-02/03-api-actuator-health-up-postman.png)
+
+As migrações são aplicadas automaticamente pela aplicação durante a
+inicialização. O Flyway registra a versão do esquema e informa quando a
+execução foi concluída com sucesso.
+
+![Migrações do banco aplicadas com sucesso](docs/evidencias/e1-02/04-migration-aplicada.png)
+
+### Criar o cenário sintético
+
+Para popular o banco com dados didáticos e reproduzíveis, enviar:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/demonstracoes/cenarios \
+  -H "Content-Type: application/json" \
+  -d '{"cenario":"e1-volume","semente":42}'
+```
+
+O cenário usa dados sintéticos e uma semente fixa. A resposta esperada é
+HTTP `201`, com o resumo dos registros criados e os próximos passos de
+consulta.
+
+![Cenário sintético criado com sucesso](docs/evidencias/e1-02/07-cenario-sintetico-criado.png)
+
+### Verificar o volume e a persistência
+
+O Compose cria um volume nomeado para os dados do PostgreSQL:
+
+```bash
+docker volume ls
+```
+
+![Volume nomeado do PostgreSQL](docs/evidencias/e1-02/06-volume-nomeado-postgres.png)
+
+Consultar o estoque antes de recriar os containers:
+
+```bash
+curl http://localhost:8080/api/v1/estoques
+```
+
+![Consulta de estoque antes do restart](docs/evidencias/e1-02/08-consulta-estoque-antes-restart.png)
+
+Parar e remover os containers sem remover o volume:
+
+```bash
+docker compose down
+docker volume ls
+```
+
+O comando `docker compose down` remove containers, rede e processos do
+Compose, mas preserva o volume nomeado. Não usar `docker compose down -v`
+quando o objetivo for comprovar a persistência.
+
+![Volume preservado após docker compose down](docs/evidencias/e1-02/09-volume-preservado-apos-down.png)
+
+Subir novamente e verificar a saúde dos serviços:
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+![Serviços saudáveis após o restart](docs/evidencias/e1-02/10-servicos-saudaveis-apos-restart.png)
+
+Consultar o mesmo estoque depois da recriação:
+
+```bash
+curl http://localhost:8080/api/v1/estoques
+```
+
+![Consulta de estoque após o restart](docs/evidencias/e1-02/11-consulta-estoque-apos-restart.png)
+
+### Resultado esperado
+
+- A API e o PostgreSQL iniciam pelo Docker Compose.
+- Os dois serviços aparecem como saudáveis.
+- O Actuator responde com status `UP`.
+- As migrações do banco são aplicadas durante a inicialização.
+- O cenário sintético é criado com resposta HTTP `201`.
+- O estoque pode ser consultado antes e depois da recriação dos containers.
+- O volume nomeado permanece após `docker compose down`.
+- Os dados do cenário continuam disponíveis depois do novo `docker compose up`.
 
 ## 5. Demais entregas
 
