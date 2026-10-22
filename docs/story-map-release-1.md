@@ -136,7 +136,8 @@ roteiro para criar as dependências à mão.
 
 O ClickUp registra responsáveis, status e dependências.
 A task E2-02 deve relacionar cada tarefa aos testes unitários,
-de integração e de aceitação correspondentes.
+de integração e de aceitação correspondentes. Essa ligação está em
+[rastreabilidade-release-1.md](rastreabilidade-release-1.md).
 
 Este documento define o escopo e os critérios; não comprova sua execução.
 A conclusão de cada história depende da validação dos critérios,

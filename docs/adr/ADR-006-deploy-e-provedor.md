@@ -22,10 +22,12 @@ mas não publica. A `main` protegida recebe mudanças após revisão da equipe.
 - A senha PostgreSQL permanece em `~/bloodell-backend/.env`, ignorado pelo Git.
   O banco usa volume Docker e a porta fica vinculada ao loopback da EC2.
 - O IP público automático muda após parada e partida da instância. Atualizar
-  `EC2_HOST`, `EC2_KNOWN_HOSTS` e a URL documentada caso isso ocorra.
+  `EC2_HOST`, `EC2_KNOWN_HOSTS` e a URL documentada, além de reemitir o
+  certificado para o novo IP, caso isso ocorra.
 - O frontend vive em outro repositório e não é publicado por este workflow.
-- O Nginx atual serve HTTP/80. HTTPS/443 ainda precisa ser configurado para
-  atender também ao critério de segurança de RSD; não alegar que já existe TLS.
+- O Nginx serve HTTPS/443 com certificado Let's Encrypt para o IP. HTTP/80
+  redireciona para HTTPS, exceto a rota de validação do Certbot. O certificado
+  de seis dias é renovado pelo timer do Snap e um deploy hook recarrega o Nginx.
 - A API não tem autenticação. O ambiente público é somente para dados sintéticos.
 
 ## Verificação e rollback
