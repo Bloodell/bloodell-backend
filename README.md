@@ -209,7 +209,9 @@ Nenhuma senha vai para o Git. As variáveis vêm do `.env` (ignorado) e, no depl
 do ambiente do provedor. O `.env.example` documenta todas elas.
 Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
-## Documentação complementar
+## Documentação complementar:
+
+- [Story map da Release 1](docs/story-map-release-1.md) — backbone, três histórias, critérios de aceite e tarefas vinculadas ao ClickUp.
 
 - `docs/adr/` — decisões de arquitetura e o que dispara a revisão de cada uma
 - `docs/complexidade-u1.md` — Big-O medido na implementação real
