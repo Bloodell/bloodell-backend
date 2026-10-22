@@ -64,6 +64,6 @@ Espaço: O(n) nós.
 
 ## O que ainda não está aqui
 
-Complexidade de FEFO, tabela hash, matriz ABO/Rh e vizinho mais próximo entra
-neste documento **quando esses algoritmos forem implementados**, na Unidade 2.
-Anotar Big-O de código que não existe seria inventar evidência.
+Complexidade de FEFO, tabela hash e matriz ABO/Rh entra neste documento quando
+esses algoritmos forem implementados, na Unidade 2. A complexidade do
+roteirizador implementado está descrita em `escopo-grafo-rotas.md`.

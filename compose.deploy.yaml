@@ -1,0 +1,5 @@
+services:
+  api:
+    image: bloodell-backend:${BLOODELL_IMAGE_TAG:?defina BLOODELL_IMAGE_TAG com o SHA do commit}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod

@@ -1,11 +1,15 @@
 package br.edu.cesar.bloodell.entrega.aplicacao;
 
+import br.edu.cesar.bloodell.aed.u2.Roteirizador;
+import br.edu.cesar.bloodell.compartilhado.dominio.CoordenadaGeo;
 import br.edu.cesar.bloodell.compartilhado.excecao.ConflitoException;
 import br.edu.cesar.bloodell.compartilhado.excecao.RecursoNaoEncontradoException;
 import br.edu.cesar.bloodell.compartilhado.excecao.RegraDeNegocioException;
 import br.edu.cesar.bloodell.entrega.apresentacao.EntregaDtos.EntregaEntrada;
 import br.edu.cesar.bloodell.entrega.apresentacao.EntregaDtos.EntregaResposta;
+import br.edu.cesar.bloodell.entrega.apresentacao.EntregaDtos.ParadaRota;
 import br.edu.cesar.bloodell.entrega.apresentacao.EntregaDtos.PlanejamentoEntregaEntrada;
+import br.edu.cesar.bloodell.entrega.apresentacao.EntregaDtos.RotaPlanejada;
 import br.edu.cesar.bloodell.entrega.dominio.Entrega;
 import br.edu.cesar.bloodell.entrega.dominio.StatusEntrega;
 import br.edu.cesar.bloodell.entrega.infraestrutura.EntregaRepository;
@@ -17,6 +21,10 @@ import br.edu.cesar.bloodell.unidade.infraestrutura.UnidadeRepository;
 import br.edu.cesar.bloodell.veiculo.dominio.StatusVeiculo;
 import br.edu.cesar.bloodell.veiculo.dominio.Veiculo;
 import br.edu.cesar.bloodell.veiculo.infraestrutura.VeiculoRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,17 +32,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EntregaService {
 
+    private static final ObjectMapper JSON = new ObjectMapper();
+
     private final EntregaRepository entregas;
     private final RequisicaoRepository requisicoes;
     private final VeiculoRepository veiculos;
     private final UnidadeRepository unidades;
+    private final Roteirizador roteirizador;
 
     public EntregaService(EntregaRepository entregas, RequisicaoRepository requisicoes,
-                          VeiculoRepository veiculos, UnidadeRepository unidades) {
+                          VeiculoRepository veiculos, UnidadeRepository unidades,
+                          Roteirizador roteirizador) {
         this.entregas = entregas;
         this.requisicoes = requisicoes;
         this.veiculos = veiculos;
         this.unidades = unidades;
+        this.roteirizador = roteirizador;
     }
 
     @Transactional
@@ -74,6 +87,33 @@ public class EntregaService {
     public EntregaResposta atualizarPlanejamento(Long id, PlanejamentoEntregaEntrada entrada) {
         Entrega entrega = buscar(id);
         entrega.atualizarPlanejamento(entrada.rota(), entrada.distanciaKm(), entrada.tempoEstimadoMin());
+        return resposta(entrega);
+    }
+
+    @Transactional
+    public EntregaResposta roteirizar(Long id) {
+        Entrega entrega = buscar(id);
+        if (entrega.getStatus() != StatusEntrega.PLANEJADA) {
+            throw new RegraDeNegocioException("A rota so pode ser calculada enquanto a entrega estiver planejada.");
+        }
+
+        Unidade origem = entrega.getOrigem();
+        Unidade destino = entrega.getRequisicao().getHospital();
+        CoordenadaGeo coordenadaOrigem = origem.getLocalizacao();
+        CoordenadaGeo coordenadaDestino = destino.getLocalizacao();
+        int[] ordem = roteirizador.calcularOrdemDeVisita(
+                coordenadaOrigem.getLatitude(), coordenadaOrigem.getLongitude(),
+                new double[]{coordenadaDestino.getLatitude()},
+                new double[]{coordenadaDestino.getLongitude()});
+        if (ordem.length != 1 || ordem[0] != 0) {
+            throw new IllegalStateException("Roteirizador deve visitar o hospital da entrega exatamente uma vez.");
+        }
+
+        double distanciaKm = coordenadaOrigem.distanciaKm(coordenadaDestino);
+        List<ParadaRota> paradas = List.of(parada(0, origem), parada(1, destino));
+        entrega.atualizarPlanejamento(serializarRota(paradas),
+                BigDecimal.valueOf(distanciaKm).setScale(3, RoundingMode.HALF_UP),
+                entrega.getTempoEstimadoMin());
         return resposta(entrega);
     }
 
@@ -127,6 +167,20 @@ public class EntregaService {
 
     private Unidade unidade(Long id) {
         return unidades.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Unidade", id));
+    }
+
+    private static ParadaRota parada(int ordem, Unidade unidade) {
+        CoordenadaGeo localizacao = unidade.getLocalizacao();
+        return new ParadaRota(ordem, unidade.tipo(), unidade.getId(), unidade.getNome(),
+                localizacao.getLatitude(), localizacao.getLongitude());
+    }
+
+    private String serializarRota(List<ParadaRota> paradas) {
+        try {
+            return JSON.writeValueAsString(new RotaPlanejada(paradas));
+        } catch (JsonProcessingException excecao) {
+            throw new IllegalStateException("Nao foi possivel serializar a rota calculada.", excecao);
+        }
     }
 
     public static EntregaResposta resposta(Entrega entrega) {

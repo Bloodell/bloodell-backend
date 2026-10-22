@@ -1,0 +1,29 @@
+# API respondendo
+# Commit : a10c090 - Merge pull request #13 from Bloodell/ocs/e1-03-container
+# Branch : docs/e1-04-evidencias-container
+# Data   : 2026-10-21 23:27:28 -03:00
+# Comando: curl.exe -i (health check e rota da API)
+
+PS> curl.exe -i http://127.0.0.1:8080/actuator/health
+HTTP/1.1 200 
+X-Correlacao-Id: e7be4700-dff
+Content-Type: application/vnd.spring-boot.actuator.v3+json
+Transfer-Encoding: chunked
+Date: Thu, 22 Oct 2026 02:27:29 GMT
+
+{"groups":["liveness","readiness"],"status":"UP"}
+
+
+PS> curl.exe -i http://127.0.0.1:8080/api/v1/algoritmos/situacao
+HTTP/1.1 200 
+X-Correlacao-Id: 6a7917e3-2e0
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Content-Type: application/json
+Content-Length: 490
+Date: Thu, 22 Oct 2026 02:27:29 GMT
+
+{"etapaVigente":"U1","implementados":["ListaEstoque (lista)","FilaRequisicoes (fila)","PilhaHistorico (pilha)","Roteirizador (vizinho mais proximo; AED-U2)","paridade C11 <-> Java das tres estruturas U1"],"pendentesDaUnidadeDois":["MatrizCompatibilidade (ABO/Rh)","FefoSeletor (insercao ordenada)","IndiceEstoqueHash (tabela hash manual)"],"observacao":"Os itens pendentes existem apenas como interface e stub que lanca UnsupportedOperationException. Nenhuma linha deles foi implementada."}
+
+

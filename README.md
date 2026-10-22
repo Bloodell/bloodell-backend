@@ -35,7 +35,7 @@ a paridade da AED.
 
 ```bash
 # 1. clonar
-git clone <url-do-repo> bloodell-backend
+git clone https://github.com/Bloodell/bloodell-backend.git bloodell-backend
 cd bloodell-backend
 
 # 2. criar o arquivo de variáveis a partir do exemplo (o .env nunca é versionado)
@@ -58,6 +58,13 @@ curl -X POST http://127.0.0.1:8080/api/v1/demonstracoes/cenarios \
 # 6. abrir a documentação da API
 # http://127.0.0.1:8080/swagger-ui.html
 ```
+
+O resultado esperado dos passos 3 e 4 está registrado, com commit e data, em
+[docs/evidencias/e1/07-compose-ps.txt](docs/evidencias/e1/07-compose-ps.txt) (API e
+PostgreSQL `healthy`) e
+[docs/evidencias/e1/08-api-resposta.txt](docs/evidencias/e1/08-api-resposta.txt)
+(API respondendo). Para regenerar: `.\scripts\gerar-evidencias.ps1` — ver
+[docs/evidencias/e1/](docs/evidencias/e1/README.md).
 
 **Tempo estimado por etapa:** clonar e configurar, 3 min · primeiro
 `docker compose up --build` (baixa imagens e dependências Maven), 8 a 12 min ·
@@ -100,6 +107,72 @@ No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
 > O `.gitattributes` fixa as quebras de linha de `mvnw` e do `Makefile` em LF. Sem
 > isso, um clone no Windows pode gravar CRLF e o build falha com
 > `bad interpreter: /bin/sh^M` ou `missing separator`.
+> 
+## Decisões de containerização
+
+| Decisão | Alternativa considerada | Justificativa |
+|---|---|---|
+| Eclipse Temurin 25: JDK no build e JRE na execução | Usar JDK também na imagem final | Mantém a versão Java do projeto e reduz o tamanho e as ferramentas disponíveis na imagem final. A aplicação roda com usuário sem privilégios de root. |
+| Dockerfile multi-stage | Compilar e executar em um único estágio | Separa compilação e execução. Somente o JAR gerado é copiado do builder para a imagem final, sem fontes ou ferramentas de build. |
+| Testes unitários no builder | Construir a imagem sem executar testes | Uma falha nos testes rápidos interrompe a construção. Integração com PostgreSQL e paridade C11/Java são verificadas separadamente na CI com `./mvnw -B verify`. |
+| Volume nomeado `postgres-data` | Guardar os dados apenas no container | Preserva o banco quando os containers são removidos e recriados. `docker compose down` mantém o volume; `docker compose down -v` remove os dados. |
+| Comunicação pelo nome do serviço `postgres` | Fixar o endereço IP do container | O DNS do Compose permite que a API encontre o banco em `postgres:5432` pela rede `dados`, mesmo quando o IP do container muda. |
+| Rede interna `dados` e portas locais | Publicar API e banco em todas as interfaces | A API e o banco se comunicam pela rede interna. Para desenvolvimento, as portas publicadas ficam vinculadas a `127.0.0.1`. |
+| Healthchecks e `depends_on` com `service_healthy` | Iniciar os serviços sem verificar disponibilidade | A API só começa a iniciar depois que o PostgreSQL aceita conexões. O healthcheck da API consulta `/actuator/health`. |
+| Variáveis de ambiente e `.env` ignorado pelo Git | Colocar credenciais diretamente nos arquivos versionados | O `.env.example` documenta a configuração local. As credenciais reais ficam fora do repositório e devem ser configuradas no ambiente do provedor durante o deploy. |
+
+## Pipeline e deploy na EC2
+
+O workflow `.github/workflows/ci.yml` roda os testes C11 e `./mvnw verify` em
+pushes e pull requests. Somente depois dos dois jobs verdes ele constrói a imagem
+Docker. Em um **push na `main`** (inclusive merge de PR), o mesmo job envia essa
+imagem para a EC2 por SSH, atualiza o checkout de `main`, sobe API e PostgreSQL
+com Compose e exige que `/actuator/health` responda com sucesso. Em PRs, a
+imagem é validada, mas o deploy não ocorre. O antigo workflow de deploy que só
+imprimia um lembrete foi removido.
+
+O ambiente de demonstração usa o IP público atual
+`http://34.235.158.105/actuator/health`; a interface é servida em
+`http://34.235.158.105/`. O IP público automático pode mudar se a instância for
+parada e iniciada novamente. Nesse caso, atualizar `EC2_HOST` e
+`EC2_KNOWN_HOSTS` nas variáveis do repositório e os links desta seção.
+
+Na EC2, `~/bloodell-backend/.env` contém a senha do banco e não entra no Git.
+O `compose.deploy.yaml` versionado escolhe a imagem pelo SHA do commit e ativa
+o perfil `prod`; o volume `postgres-data` preserva os dados entre deploys. A
+Actions usa o secret `EC2_SSH_KEY` e as variáveis `EC2_HOST` e
+`EC2_KNOWN_HOSTS`. Nunca imprimir ou versionar a chave privada. O frontend está
+em outro repositório e sua publicação ainda não faz parte desta esteira.
+
+Para voltar à imagem anterior, localizar no log da Actions o SHA do último
+deploy saudável e, na EC2, executar:
+
+```bash
+cd ~/bloodell-backend
+sha_anterior='SUBSTITUA_PELO_SHA_DO_DEPLOY_ANTERIOR'
+BLOODELL_IMAGE_TAG="$sha_anterior" docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
+curl --fail http://127.0.0.1:8080/actuator/health
+```
+
+O rollback reutiliza uma imagem já carregada na EC2. Não remover imagens antigas
+antes de confirmar o novo deploy. Migrações Flyway incompatíveis podem exigir
+restauração do banco; trocar só a imagem não reverte o schema.
+
+| Decisão | Alternativa considerada | Justificativa |
+|---|---|---|
+| GitHub Actions com `needs` | Deploy em workflow paralelo | Os testes e a imagem precisam concluir antes da publicação; uma execução vermelha não alcança a EC2. |
+| EC2 existente e SSH com chave dedicada | Criar outro serviço no Render | A equipe já tem a EC2 e a URL funcionando; a chave fica em GitHub Secrets e a identidade do servidor é fixada em `EC2_KNOWN_HOSTS`. |
+| Transferir a imagem pelo SHA | Recompilar na EC2 | Publica exatamente a imagem que passou pelo job da esteira e permite voltar a uma versão anterior. |
+| PR para `dev` e promoção de `dev` para `main` | Publicar cada branch | Mantém a integração do grupo em `dev` e reserva o deploy público para merges aprovados em `main`. |
+
+**Limites atuais:** a URL da EC2 usa HTTP, sem HTTPS; a configuração de TLS
+precisa ser concluída para a exigência de RSD. A API ainda não tem autenticação,
+portanto o ambiente público deve conter somente dados sintéticos. O frontend
+estático tem seu próprio processo de publicação e ainda precisa de CI/CD.
+
+As evidências de uma execução vermelha, uma verde com deploy e a URL validada
+devem ser vinculadas aqui após o primeiro merge em `main`. Uma CI verde em PR
+não é evidência de deploy.
 
 ## Estrutura do projeto
 
@@ -114,7 +187,7 @@ src/main/java/br/edu/cesar/bloodell/
   aed/               MÓDULO ACADÊMICO — Java puro, sem Spring e sem JPA
     contratos/       dados simples espelhados em C
     u1/              lista, fila e pilha com nós manuais
-    u2/              SÓ interfaces e stubs indisponíveis
+    u2/              algoritmos U2; vizinho mais próximo implementado
 academic/c/          as mesmas estruturas em C11 (aulas de AED)
 tests/parity/        fixtures comuns às duas implementações
 docs/                decisões (ADR), complexidade, concorrência, checklists
@@ -133,11 +206,14 @@ pastas gigantes por tipo de classe.
 | Alocação | `AlocacaoProvisoriaU1`: primeira bolsa **do mesmo tipo**, pela ordem de chegada | matriz ABO/Rh + FEFO |
 | Ordenação por validade | **não existe** | FEFO por inserção ordenada |
 | Índice de estoque | consulta direta | tabela hash manual |
-| Rota | **não existe** | vizinho mais próximo |
+| Rota | **não existia** | vizinho mais próximo sobre distâncias geográficas |
 
-O pacote `aed/u2` contém apenas interfaces e stubs que lançam
-`UnsupportedOperationException`. O teste `StubsDaUnidadeDoisTest` transforma isso
-em evidência automatizada. `GET /api/v1/algoritmos/situacao` mostra o mesmo pela API.
+Em `aed/u2`, matriz de compatibilidade, FEFO e índice hash continuam como
+interfaces e stubs que lançam `UnsupportedOperationException`. O roteirizador
+usa um grafo completo não direcionado com pesos Haversine e a heurística do
+vizinho mais próximo. A rota estimada pode ser calculada em
+`POST /api/v1/entregas/{id}/roteirizacao` enquanto a entrega estiver planejada.
+`GET /api/v1/algoritmos/situacao` lista os algoritmos implementados e pendentes.
 
 ## Endpoints principais
 
@@ -154,6 +230,7 @@ em evidência automatizada. `GET /api/v1/algoritmos/situacao` mostra o mesmo pel
 | `GET /api/v1/requisicoes/fila` | fila produzida pela estrutura da AED |
 | `POST /api/v1/requisicoes/{id}/alocacoes` | processa e aloca (201 / 409 / 422) |
 | `GET · POST /api/v1/entregas`, `GET · PUT · DELETE /api/v1/entregas/{id}` | planeja, consulta, ajusta ou cancela uma entrega |
+| `POST /api/v1/entregas/{id}/roteirizacao` | calcula e persiste rota geográfica estimada para uma entrega planejada |
 | `POST /api/v1/entregas/{id}/despacho · /inicio-transporte · /conclusao` | avança o fluxo de entrega até o atendimento da requisição |
 | `POST /api/v1/telemetrias` | ingestão assíncrona (202) |
 | `GET /api/v1/telemetrias/metricas` | números da ingestão concorrente (SO) |
@@ -193,14 +270,18 @@ Nenhuma senha vai para o Git. As variáveis vêm do `.env` (ignorado) e, no depl
 do ambiente do provedor. O `.env.example` documenta todas elas.
 Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
-## Documentação complementar
+## Documentação complementar:
+
+- [Story map da Release 1](docs/story-map-release-1.md) — backbone, três histórias, critérios de aceite e tarefas vinculadas ao ClickUp.
 
 - `docs/adr/` — decisões de arquitetura e o que dispara a revisão de cada uma
 - `docs/complexidade-u1.md` — Big-O medido na implementação real
+- `docs/w04-estruturas-base.md` — evidências da W04–W05: estruturas-base, CI/CD e topologia de comunicação
 - documentação formal de equivalência C ↔ Java será consolidada em etapa posterior
 - `docs/concorrencia.md` — os pontos de concorrência e como são testados
 - `docs/versionamento-api.md` — regra de mudança de contrato
 - `docs/checklist-pronto-para-demo.md` — checagem na véspera de cada entrega
+- [`docs/evidencias/e1/`](docs/evidencias/e1/README.md) — E1-04: saídas reais do `docker compose ps` e da API respondendo
 - `docs/pendencias-academicas.md` — conflitos do blueprint aguardando os professores
 
 ## Equipe
