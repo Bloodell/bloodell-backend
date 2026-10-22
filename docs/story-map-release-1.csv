@@ -1,0 +1,10 @@
+id,tipo,nome,pai,responsavel,depende_de,criterios,card
+US-R1-01,historia,Registrar doação e disponibilizar bolsas,,"Abelardo, Danilo",,"CA1, CA2, CA3, CA4",https://app.clickup.com/t/90132678197/86akumh51
+R1-01A,tarefa,Validar geração e validade das bolsas por regra (testes unitários),US-R1-01,Abelardo,,"CA2, CA4",
+R1-01B,tarefa,Validar registro e consulta via API real e PostgreSQL (integração e aceitação),US-R1-01,Danilo,R1-01A,"CA1, CA2, CA3, CA4",
+US-R1-02,historia,Criar e consultar requisições prioritárias,,"Abelardo, Danilo",,"CA1, CA2, CA3, CA4, CA5",https://app.clickup.com/t/90132678197/86akumh52
+R1-02A,tarefa,"Validar prioridade, empate, FIFO e fila vazia (testes unitários)",US-R1-02,Abelardo,,"CA2, CA3, CA4, CA5",
+R1-02B,tarefa,Validar criação e consulta de requisições via API e PostgreSQL (integração e aceitação),US-R1-02,Danilo,R1-02A,"CA1, CA2, CA3, CA4, CA5",
+US-R1-03,historia,Processar alocação provisória U1,,"Abelardo, Danilo","US-R1-01, US-R1-02","CA1, CA2, CA3, CA4, CA5",https://app.clickup.com/t/90132678197/86akumh53
+R1-03A,tarefa,"Validar seleção, validade, compatibilidade U1 e estoque vazio (testes unitários)",US-R1-03,Abelardo,R1-01A,"CA1, CA2, CA3, CA4",
+R1-03B,tarefa,Validar resposta da alocação e reconsulta do estado persistido (integração e aceitação),US-R1-03,Danilo,"R1-03A, R1-01B, R1-02B","CA1, CA2, CA3, CA4, CA5",
