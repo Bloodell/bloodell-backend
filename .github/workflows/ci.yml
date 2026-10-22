@@ -108,3 +108,4 @@ jobs:
           BLOODELL_IMAGE_TAG="$sha" docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
           curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health
           REMOTE
+          curl --fail --silent --show-error "http://${EC2_HOST}/actuator/health"

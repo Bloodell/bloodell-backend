@@ -36,7 +36,8 @@ e a resposta da URL pública. Guardar também um link de execução vermelha que
 bloqueou esses passos.
 
 Para rollback, escolher o SHA do deploy anterior saudável e executar na EC2
-`BLOODELL_IMAGE_TAG=<SHA> docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait`.
+`BLOODELL_IMAGE_TAG=SHA_ANTERIOR docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait`,
+substituindo `SHA_ANTERIOR` pelo hash real.
 As imagens antigas precisam permanecer na instância. Migrações Flyway
 incompatíveis exigem plano de restauração do banco, pois reverter a imagem não
 reverte o schema.
