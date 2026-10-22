@@ -82,8 +82,12 @@ class EntregaIT extends TesteDeIntegracao {
         }
         assertThat(entregas.findById(entregaId).orElseThrow().getDistanciaKm().doubleValue())
                 .isEqualTo(((Number) roteirizada.getBody().get("distanciaKm")).doubleValue());
-        assertThat(entregas.findById(entregaId).orElseThrow().getRota())
-                .isEqualTo(roteirizada.getBody().get("rota"));
+        try {
+            assertThat(objectMapper.readTree(entregas.findById(entregaId).orElseThrow().getRota()))
+                    .isEqualTo(objectMapper.readTree((String) roteirizada.getBody().get("rota")));
+        } catch (Exception excecao) {
+            throw new AssertionError("A rota persistida e a rota retornada devem ser JSON valido.", excecao);
+        }
 
         assertThat(cliente.postForEntity("/api/v1/entregas/" + entregaId + "/despacho", null, Map.class)
                 .getStatusCode()).isEqualTo(HttpStatus.OK);
