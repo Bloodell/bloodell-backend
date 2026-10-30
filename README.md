@@ -177,13 +177,27 @@ acessível para essa validação. A renovação foi simulada com
 `certbot renew --dry-run --run-deploy-hooks` e passou.
 
 **Limites atuais:** o IP público automático ainda pode mudar após uma parada da
-EC2. A API não tem autenticação, portanto o ambiente público deve conter somente
-dados sintéticos. O frontend estático tem seu próprio processo de publicação e
+EC2. O modo demonstrativo (`BLOODELL_AUTH_HABILITADA=false`) não protege a API;
+o ambiente público deve conter somente dados sintéticos. O login JWT do Card 1
+precisa de ativação coordenada com os cards de perfis e frontend antes do deploy.
+O frontend estático tem seu próprio processo de publicação e
 ainda precisa de CI/CD.
 
 As evidências de uma execução vermelha, uma verde com deploy e a URL validada
 devem ser vinculadas aqui após o primeiro merge em `main`. Uma CI verde em PR
 não é evidência de deploy.
+
+## Login JWT — Card 1
+
+Implementado para ativação explícita por ambiente: BCrypt, emissão de JWT com
+validade, `POST /api/v1/auth/login` e `GET /api/v1/auth/me`, sem cadastro público.
+A chave de assinatura é externa ao repositório; contas sem hash BCrypt válido
+não entram. Com autenticação ligada, as rotas de negócio exigem Bearer.
+
+Veja [pré-requisitos, configuração, provisionamento da primeira conta e testes](docs/autenticacao-jwt-card-1.md).
+O [Card 1 no ClickUp](https://app.clickup.com/t/90132678197/86akuuutn) trata de
+identidade. Restrições por perfil (Card 2), integração do frontend (Card 3) e
+isolamento por hospital/unidade não estão implementados nesta etapa.
 
 ## Estrutura do projeto
 

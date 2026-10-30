@@ -13,6 +13,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,6 +24,17 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 public class ManipuladorGlobalDeErros {
 
     private static final Logger LOG = LoggerFactory.getLogger(ManipuladorGlobalDeErros.class);
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ProblemaApi> tratarCredenciais(AuthenticationException erro,
+                                                         HttpServletRequest requisicao) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("Cache-Control", "no-store")
+                .header("WWW-Authenticate", "Bearer")
+                .body(ProblemaApi.de("credenciais-invalidas", "Credenciais invalidas", 401,
+                        "E-mail ou senha invalidos.", requisicao.getRequestURI(),
+                        FiltroDeCorrelacao.correlacaoAtual(), null));
+    }
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<ProblemaApi> tratarNaoEncontrado(RecursoNaoEncontradoException excecao,
