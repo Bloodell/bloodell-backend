@@ -65,3 +65,13 @@ bloodell:
     habilitado: ${BLOODELL_DEMO_HABILITADO:true}
   seguranca:
     autenticacao-habilitada: ${BLOODELL_AUTH_HABILITADA:false}
+    jwt:
+      segredo-base64: ${BLOODELL_JWT_SEGREDO_BASE64:}
+      emissor: ${BLOODELL_JWT_EMISSOR:bloodell}
+      audiencia: ${BLOODELL_JWT_AUDIENCIA:bloodell-api}
+      validade: ${BLOODELL_JWT_VALIDADE:15m}
+    admin-inicial:
+      habilitado: ${BLOODELL_ADMIN_INICIAL_HABILITADO:false}
+      nome: ${BLOODELL_ADMIN_NOME:}
+      email: ${BLOODELL_ADMIN_EMAIL:}
+      senha: ${BLOODELL_ADMIN_SENHA:}

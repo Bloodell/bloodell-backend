@@ -2,6 +2,11 @@
 
 **Data:** 19/09/2026 · **Status:** aceito · **Decidem:** equipe
 
+**Revisao em 29/10/2026:** decisao original abaixo preservada como historico.
+O pedido explicito do Card 1 introduz login JWT/BCrypt e substitui o filtro vazio.
+Ver [escopo, ativacao e limites do Card 1](../autenticacao-jwt-card-1.md).
+Autorizacao por perfil e frontend permanecem nos cards seguintes.
+
 ## Contexto
 
 O blueprint coloca login e perfis **fora do MVP** (pp.7 e 21), mas lista a
