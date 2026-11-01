@@ -1,0 +1,9 @@
+  codex/pi-container-tdd-deploy[m
+  dev[m
+  feature/autenticacao-jwt[m
+* [32mfeature/cadastro-usuarios[m
+  feature/us-r1-01-registrar-doacao-estoque[m
+  fix/revisao-deploy[m
+  infra/deploy-ec2[m
++ [36minfra/https-ec2[m
+  main[m

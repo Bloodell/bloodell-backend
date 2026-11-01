@@ -14,11 +14,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class ManipuladorGlobalDeErros {
@@ -41,6 +43,13 @@ public class ManipuladorGlobalDeErros {
                                                            HttpServletRequest requisicao) {
         return montar("recurso-nao-encontrado", "Recurso nao encontrado",
                 HttpStatus.NOT_FOUND, excecao.getMessage(), requisicao, null);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ProblemaApi> tratarAcessoNegado(AccessDeniedException excecao,
+                                                         HttpServletRequest requisicao) {
+        return montar("acesso-negado", "Acesso negado", HttpStatus.FORBIDDEN,
+                "Voce nao tem permissao para realizar esta operacao.", requisicao, null);
     }
 
     @ExceptionHandler(RegraDeNegocioException.class)
@@ -100,6 +109,14 @@ public class ManipuladorGlobalDeErros {
                                                            HttpServletRequest requisicao) {
         return montar("corpo-ilegivel", "Corpo da requisicao ilegivel", HttpStatus.BAD_REQUEST,
                 "Nao foi possivel interpretar o JSON enviado.", requisicao, null);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemaApi> tratarParametroInvalido(MethodArgumentTypeMismatchException excecao,
+                                                                HttpServletRequest requisicao) {
+        return montar("entrada-invalida", "Parametro invalido", HttpStatus.BAD_REQUEST,
+                "Um parametro da requisicao possui formato ou valor invalido.", requisicao,
+                List.of(new ProblemaApi.ErroDeCampo(excecao.getName(), "valor invalido")));
     }
 
     @ExceptionHandler(NoHandlerFoundException.class)

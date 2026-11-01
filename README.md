@@ -199,6 +199,38 @@ O [Card 1 no ClickUp](https://app.clickup.com/t/90132678197/86akuuutn) trata de
 identidade. Restrições por perfil (Card 2), integração do frontend (Card 3) e
 isolamento por hospital/unidade não estão implementados nesta etapa.
 
+## Cadastro de usuários — Card 4
+
+`POST /api/v1/usuarios` permite que um ADMIN cadastre integrantes com nome,
+e-mail, perfil e senha inicial. Reutiliza o login JWT e o BCrypt existentes;
+recusa e-mails duplicados com 409, entradas inválidas com 400 e acessos sem
+permissão com 401/403. O modo demonstrativo não libera essa rota.
+
+Veja o [contrato, requisitos e roteiro de teste](docs/cadastro-usuarios-card-4.md).
+A conta cadastrada já pode usar o login e `/auth/me`. A consulta administrativa
+está no Card 5 abaixo e a atualização no Card 6. As telas administrativas ficam
+para outra entrega.
+
+## Consulta de usuários — Card 5
+
+ADMIN pode listar contas em `GET /api/v1/usuarios?page=0&size=20` e consultar uma
+conta em `GET /api/v1/usuarios/{id}`. A lista tem limite de 100 por página e ordem
+fixa por ID crescente. Cada conta retorna apenas ID, nome, e-mail e perfil.
+
+As consultas exigem JWT e perfil ADMIN; no modo demonstrativo, permanecem
+bloqueadas. Conta inexistente retorna 404; parâmetros inválidos retornam 400. Veja o
+[contrato e roteiro de teste](docs/consulta-usuarios-card-5.md).
+
+## Atualização de usuários — Card 6
+
+`PATCH /api/v1/usuarios/{id}` permite ao ADMIN atualizar nome, e-mail e perfil.
+Campos omitidos são preservados; senha e ID não podem ser alterados. E-mail
+duplicado ou tentativa de rebaixar o último ADMIN capaz de entrar retornam 409.
+A proteção vale também em atualizações simultâneas.
+
+O login aceita o novo e-mail, e `/auth/me` e as permissões refletem o perfil atual
+do banco. Veja o [contrato, concorrência e roteiro de teste](docs/atualizacao-usuarios-card-6.md).
+
 ## Estrutura do projeto
 
 ```

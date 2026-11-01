@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import tools.jackson.databind.ObjectMapper;
 
@@ -37,20 +38,34 @@ public class ConfiguracaoSeguranca {
     }
 
     @Bean
+    public AccessDeniedHandler respostaSemPermissao(ObjectMapper mapper) {
+        return (requisicao, resposta, erro) -> {
+            resposta.setStatus(403);
+            resposta.setContentType("application/problem+json");
+            resposta.setHeader("Cache-Control", "no-store");
+            resposta.getWriter().write(mapper.writeValueAsString(ProblemaApi.de("acesso-negado",
+                    "Acesso negado", 403, "Voce nao tem permissao para realizar esta operacao.",
+                    requisicao.getRequestURI(), FiltroDeCorrelacao.correlacaoAtual(), null)));
+        };
+    }
+
+    @Bean
     public SecurityFilterChain seguranca(HttpSecurity http, PropriedadesBloodell propriedades,
             ObjectProvider<JwtDecoder> decoder, UsuarioRepository usuarios,
-            AuthenticationEntryPoint respostaNaoAutenticada) throws Exception {
+            AuthenticationEntryPoint respostaNaoAutenticada, AccessDeniedHandler respostaSemPermissao) throws Exception {
         // Credenciais apenas no Authorization Bearer; sem sessao/cookie de autenticacao.
         http.csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults())
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(cache -> cache.disable())
                 .formLogin(form -> form.disable()).httpBasic(basic -> basic.disable())
                 .logout(logout -> logout.disable())
-                .exceptionHandling(erros -> erros.authenticationEntryPoint(respostaNaoAutenticada));
+                .exceptionHandling(erros -> erros.authenticationEntryPoint(respostaNaoAutenticada)
+                        .accessDeniedHandler(respostaSemPermissao));
         if (propriedades.getSeguranca().isAutenticacaoHabilitada()) {
             http.authorizeHttpRequests(rotas -> rotas
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                    .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**",
                             "/swagger-ui.html", "/swagger-ui/**", "/api/v1/openapi", "/api/v1/openapi/**").permitAll()
                     .anyRequest().authenticated())
@@ -59,7 +74,8 @@ public class ConfiguracaoSeguranca {
                                     .jwtAuthenticationConverter(new IdentidadeJwt(usuarios))));
         } else {
             // Compatibilidade temporaria com o frontend do MVP. Auth nunca abre anonimamente.
-            http.authorizeHttpRequests(rotas -> rotas.requestMatchers("/api/v1/auth/**").denyAll()
+            http.authorizeHttpRequests(rotas -> rotas
+                    .requestMatchers("/api/v1/auth/**", "/api/v1/usuarios", "/api/v1/usuarios/**").denyAll()
                     .anyRequest().permitAll());
         }
         return http.build();
