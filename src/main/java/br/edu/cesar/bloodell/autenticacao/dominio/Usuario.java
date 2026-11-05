@@ -28,12 +28,8 @@ public class Usuario {
     protected Usuario() { }
 
     public Usuario(String nome, String email, Perfil perfil, String senhaHash) {
-        if (nome == null || nome.isBlank() || nome.trim().length() > 120) {
-            throw new IllegalArgumentException("Nome de usuario invalido.");
-        }
-        if (email == null || email.isBlank() || email.trim().length() > 160) {
-            throw new IllegalArgumentException("E-mail de usuario invalido.");
-        }
+        validarNome(nome);
+        validarEmail(email);
         if (!hashBcryptValido(senhaHash)) {
             throw new IllegalArgumentException("Usuario exige hash BCrypt valido.");
         }
@@ -42,6 +38,31 @@ public class Usuario {
         this.perfil = Objects.requireNonNull(perfil);
         this.senhaHash = senhaHash;
         this.criadoEm = OffsetDateTime.now();
+    }
+
+    /** Null significa campo omitido; o DTO de PATCH recusa null explicito. */
+    public void atualizarCadastro(String nome, String email, Perfil perfil) {
+        if (nome != null) {
+            validarNome(nome);
+            this.nome = nome.trim();
+        }
+        if (email != null) {
+            validarEmail(email);
+            this.email = normalizarEmail(email);
+        }
+        if (perfil != null) this.perfil = perfil;
+    }
+
+    private static void validarNome(String nome) {
+        if (nome == null || nome.isBlank() || nome.trim().length() > 120) {
+            throw new IllegalArgumentException("Nome de usuario invalido.");
+        }
+    }
+
+    private static void validarEmail(String email) {
+        if (email == null || email.isBlank() || email.trim().length() > 160) {
+            throw new IllegalArgumentException("E-mail de usuario invalido.");
+        }
     }
 
     public static String normalizarEmail(String email) {
