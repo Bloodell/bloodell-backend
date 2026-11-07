@@ -5,6 +5,9 @@ logging:
   level:
     br.edu.cesar.bloodell: INFO
 bloodell:
+  seguranca:
+    # Testes de negocio usam acesso anonimo; testes de autenticacao habilitam JWT explicitamente.
+    autenticacao-habilitada: false
   telemetria:
     quantidade-workers: 2
     tamanho-lote: 10
