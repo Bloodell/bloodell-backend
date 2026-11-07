@@ -64,7 +64,7 @@ bloodell:
   demonstracao:
     habilitado: ${BLOODELL_DEMO_HABILITADO:true}
   seguranca:
-    autenticacao-habilitada: ${BLOODELL_AUTH_HABILITADA:false}
+    autenticacao-habilitada: true
     jwt:
       segredo-base64: ${BLOODELL_JWT_SEGREDO_BASE64:}
       emissor: ${BLOODELL_JWT_EMISSOR:bloodell}
