@@ -142,15 +142,31 @@ automático na EC2 apenas em `main`.
 
 ## Issue/bug tracker (GitHub)
 
-Issues em <https://github.com/Bloodell/bloodell-backend/issues> (10 abertas,
-com rótulos `bug`, `enhancement`, `tech-debt`, `ci`, `U2`) e template de bug
-report (PR #25). Exemplos: #26 (bug: alocação parcial marca requisição como
-ALOCADA), #34 (autenticação e perfis de acesso), #32/#33 (FEFO e ABO/Rh, U2).
+Issues em <https://github.com/Bloodell/bloodell-backend/issues>, com rótulos
+(`bug`, `enhancement`, `tech-debt`, `ci`, `U2`, `Entrega 04`), prioridade e
+template de bug report (PR #25).
 
-**Print da tela:** salvar a captura da página de issues em
-`docs/evidencias/e4/issues.png` (e, se possível, a de um PR fechando uma
-issue) e referenciá-la no README:
-`![Issues do GitHub](docs/evidencias/e4/issues.png)`.
+O milestone [Entrega 04](https://github.com/Bloodell/bloodell-backend/milestone/1)
+agrupa o trabalho desta entrega. Cada história tem uma issue com critérios de
+aceite, fechada pelo PR que a implementou:
+
+| Issue | Tipo | Fechada por |
+|---|---|---|
+| #41 US-E4-01: login com JWT | história | PR #36 |
+| #42 US-E4-02: cadastro de usuários | história | PR #38 |
+| #43 US-E4-03: consulta de usuários | história | PR #38 |
+| #44 US-E4-04: atualização de usuários | história | PR #38 |
+| #45 Modo demonstrativo deixava a API aberta em produção | bug (prioridade alta) | PR #39 |
+| [frontend #3](https://github.com/Bloodell/bloodell-frontend/issues/3) US-E4-05: Central logística | história | frontend PR #2 |
+
+A issue #34 (autenticação e perfis de acesso) continua aberta, com o andamento
+registrado em comentário: falta a permissão por perfil nas demais rotas e o login
+no frontend. As issues de U2 (#32, #33) e os bugs e débitos #26–#31 e #35 seguem
+no backlog.
+
+![Issues do backend](evidencias/e4/issues.png)
+
+![Milestone Entrega 04](evidencias/e4/milestone-entrega-04.png)
 
 ## Screencasts (YouTube)
 

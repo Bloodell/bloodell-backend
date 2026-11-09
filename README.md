@@ -388,9 +388,13 @@ antes do merge — tabela completa em [docs/entrega-04.md](docs/entrega-04.md#ve
 ### Issue/bug tracker
 
 Issues no [GitHub](https://github.com/Bloodell/bloodell-backend/issues), com rótulos
-e template de bug report.
+e template de bug report. O milestone
+[Entrega 04](https://github.com/Bloodell/bloodell-backend/milestone/1) reúne as
+issues #41–#45, fechadas pelos PRs #36, #38 e #39.
 
 ![Issues do GitHub](docs/evidencias/e4/issues.png)
+
+![Milestone Entrega 04](docs/evidencias/e4/milestone-entrega-04.png)
 
 ### Screencasts
 
