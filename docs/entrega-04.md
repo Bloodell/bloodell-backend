@@ -6,8 +6,9 @@ Repositórios: [bloodell-backend](https://github.com/Bloodell/bloodell-backend) 
 
 ## Histórias implementadas
 
-Todas as histórias abaixo estão em `main`/`dev`, com testes de integração
-(Testcontainers + PostgreSQL) e documento de contrato em `docs/`.
+US-E4-01 a 04 estão no backend, integradas em `dev` (ainda não promovidas para
+`main`/EC2), com testes de integração (Testcontainers + PostgreSQL) e documento
+de contrato em `docs/`. US-E4-05 está no frontend, já em `main`.
 
 ### US-E4-01 — Login com JWT (Card 1)
 
