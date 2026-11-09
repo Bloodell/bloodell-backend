@@ -346,12 +346,12 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
 | Nome | E-mail institucional | Área |
 |---|---|---|
-| _preencher_ | _@cesar.school_ | Domínio e persistência |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | Algoritmos AED (C e Java) |
-| _preencher_ | _@cesar.school_ | API e integração |
-| _preencher_ | _@cesar.school_ | Frontend e painéis |
-| _preencher_ | _@cesar.school_ | Infraestrutura, CI/CD e telemetria |
+| Alisson da Silva Santana | ass6@cesar.school | Scrum Master |
+| Arthur Abelardo Campos da Costa | aacc@cesar.school | Desenvolvedor |
+| Carlos Henrique Cavalcante Farias | chcf@cesar.school | Desenvolvedor |
+| Danilo Gabriel Diniz e Silva | dgds@cesar.school | Desenvolvedor |
+| Gabriel Gomes de Andrade | gga3@cesar.school | Product Owner |
+| Roberto Henrique Cavalcanti Freitas | rhcf@cesar.school | Analista de requisitos e testes (QA) |
 
 ## Entregas
 
@@ -360,4 +360,43 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 | Entrega 01 | 31/08/2026 | — | — |
 | Entrega 02 | 21/09/2026 | _preencher_ | _preencher_ |
 | Entrega 03 | 19/10/2026 | — | — |
-| Entrega 04 e apresentação | 09/11/2026 | — | — |
+| Entrega 04 e apresentação | 09/11/2026 | [Entrega 04](#entrega-04) | _colar links do YouTube (ver abaixo)_ |
+
+## Entrega 04
+
+Detalhes e tabela de commits em [docs/entrega-04.md](docs/entrega-04.md).
+
+### Histórias implementadas
+
+> Formato post-it: *Como [quem], quero [o quê], para [por quê]*.
+
+| ID | História (post-it) | Evidência |
+|---|---|---|
+| US-E4-01 | **Como** integrante da equipe, **quero** entrar com e-mail e senha e receber um JWT, **para** acessar a API de forma identificada. | PR #36 · [Card 1](docs/autenticacao-jwt-card-1.md) |
+| US-E4-02 | **Como** administrador, **quero** cadastrar integrantes com perfil e senha inicial, **para** que cada pessoa tenha sua conta. | PR #38 · [Card 4](docs/cadastro-usuarios-card-4.md) |
+| US-E4-03 | **Como** administrador, **quero** listar e consultar contas, **para** saber quem tem acesso. | PR #38 · [Card 5](docs/consulta-usuarios-card-5.md) |
+| US-E4-04 | **Como** administrador, **quero** atualizar nome, e-mail e perfil de uma conta (sem rebaixar o último ADMIN), **para** manter os acessos corretos. | PR #38 · [Card 6](docs/atualizacao-usuarios-card-6.md) |
+| US-E4-05 | **Como** operador de logística, **quero** ver veículos e entregas em um mapa, **para** acompanhar o transporte (posição pela telemetria ou estimada). | [frontend](https://github.com/Bloodell/bloodell-frontend) PR #2 · rota `/rastreamento` |
+
+Também: JWT obrigatório no perfil de produção (PR #39).
+
+### Versionamento
+
+Commits e PRs semanais (30/10, 31/10, 05/11, 06/11) com revisão por outro membro
+antes do merge — tabela completa em [docs/entrega-04.md](docs/entrega-04.md#versionamento-commits-e-prs-da-entrega).
+
+### Issue/bug tracker
+
+Issues no [GitHub](https://github.com/Bloodell/bloodell-backend/issues), com rótulos
+e template de bug report. O milestone
+[Entrega 04](https://github.com/Bloodell/bloodell-backend/milestone/1) reúne as
+issues #41–#45, fechadas pelos PRs #36, #38 e #39.
+
+![Issues do GitHub](docs/evidencias/e4/issues.png)
+
+![Milestone Entrega 04](docs/evidencias/e4/milestone-entrega-04.png)
+
+### Screencasts
+
+- Uso do sistema (novas histórias): _colar link do YouTube_
+- Explicação do código das histórias: _colar link do YouTube_
