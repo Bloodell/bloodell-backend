@@ -398,5 +398,5 @@ issues #41–#45, fechadas pelos PRs #36, #38 e #39.
 
 ### Screencasts
 
-- Uso do sistema (novas histórias): _colar link do YouTube_
-- Explicação do código das histórias: _colar link do YouTube_
+- Uso do sistema: https://youtu.be/2dES2zKdCJM
+- Explicação do código das histórias: https://youtu.be/wCdDvWbx23Y?si=kwmw3_0ZpgePH5Df
