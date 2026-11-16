@@ -61,7 +61,7 @@ public class LeituraTelemetria {
         this.statusVeiculo = statusVeiculo;
         this.registradaEm = registradaEm;
         this.recebidaEm = OffsetDateTime.now();
-        this.correlacao = correlacao;
+        this.correlacao = br.edu.cesar.bloodell.config.FiltroDeCorrelacao.normalizar(correlacao);
     }
 
     public Long getId() {

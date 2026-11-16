@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 public class FilaDeIngestao {
 
     public record LeituraEmTransito(LeituraEntrada leitura, String correlacao) {
+        public LeituraEmTransito {
+            correlacao = br.edu.cesar.bloodell.config.FiltroDeCorrelacao.normalizar(correlacao);
+        }
     }
 
     private final BlockingQueue<LeituraEmTransito> fila;

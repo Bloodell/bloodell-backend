@@ -18,6 +18,17 @@ public class FiltroDeCorrelacao extends OncePerRequestFilter {
 
     public static final String CHAVE_MDC = "requisicaoId";
     public static final String CABECALHO = "X-Correlacao-Id";
+    private static final int TAMANHO_MAXIMO = 40;
+    private static final java.util.regex.Pattern FORMATO = java.util.regex.Pattern.compile("[A-Za-z0-9._-]{1,40}");
+
+    /** Returns a bounded, header/log/database-safe value even for non-HTTP callers. */
+    public static String normalizar(String valor) {
+        if (valor != null) {
+            String limpo = valor.trim();
+            if (limpo.length() <= TAMANHO_MAXIMO && FORMATO.matcher(limpo).matches()) return limpo;
+        }
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
 
     public static String correlacaoAtual() {
         String valor = MDC.get(CHAVE_MDC);
@@ -27,10 +38,7 @@ public class FiltroDeCorrelacao extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest requisicao, HttpServletResponse resposta,
                                     FilterChain cadeia) throws ServletException, IOException {
-        String recebido = requisicao.getHeader(CABECALHO);
-        String correlacao = (recebido == null || recebido.isBlank())
-                ? UUID.randomUUID().toString().substring(0, 12)
-                : recebido.trim();
+        String correlacao = normalizar(requisicao.getHeader(CABECALHO));
         MDC.put(CHAVE_MDC, correlacao);
         resposta.setHeader(CABECALHO, correlacao);
         try {
