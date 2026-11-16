@@ -360,7 +360,7 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 | Entrega 01 | 31/08/2026 | — | — |
 | Entrega 02 | 21/09/2026 | _preencher_ | _preencher_ |
 | Entrega 03 | 19/10/2026 | — | — |
-| Entrega 04 e apresentação | 09/11/2026 | [Entrega 04](#entrega-04) | _colar links do YouTube (ver abaixo)_ |
+| Entrega 04 e apresentação | 09/11/2026 | [Entrega 04](#entrega-04) | [Uso do sistema](https://www.youtube.com/watch?v=2dES2zKdCJM) · [Explicação do código](https://www.youtube.com/watch?v=wCdDvWbx23Y) |
 
 ## Entrega 04
 
@@ -398,5 +398,5 @@ issues #41–#45, fechadas pelos PRs #36, #38 e #39.
 
 ### Screencasts
 
-- Uso do sistema (novas histórias): _colar link do YouTube_
-- Explicação do código das histórias: _colar link do YouTube_
+- [Vídeo 1 — Uso do sistema (novas histórias)](https://www.youtube.com/watch?v=2dES2zKdCJM)
+- [Vídeo 2 — Explicação do código das histórias](https://www.youtube.com/watch?v=wCdDvWbx23Y)
