@@ -94,7 +94,7 @@ public class PropriedadesBloodell {
     }
 
     public static class Seguranca {
-        private boolean autenticacaoHabilitada = false;
+        private boolean autenticacaoHabilitada = true;
 
         public boolean isAutenticacaoHabilitada() {
             return autenticacaoHabilitada;

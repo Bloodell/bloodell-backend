@@ -1,6 +1,8 @@
 package br.edu.cesar.bloodell.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
@@ -12,7 +14,9 @@ public class ConfiguracaoOpenApi {
 
     @Bean
     public OpenAPI documentacaoBloodell() {
-        return new OpenAPI().info(new Info()
+        return new OpenAPI().components(new Components().addSecuritySchemes("bearerAuth",
+                new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
+                .info(new Info()
                 .title("BLOODELL API")
                 .version("v1")
                 .description("""

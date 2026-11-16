@@ -1,6 +1,9 @@
 spring:
   jpa:
     show-sql: true
+bloodell:
+  seguranca:
+    autenticacao-habilitada: ${BLOODELL_AUTH_HABILITADA:false}
 logging:
   level:
     org.hibernate.SQL: DEBUG
