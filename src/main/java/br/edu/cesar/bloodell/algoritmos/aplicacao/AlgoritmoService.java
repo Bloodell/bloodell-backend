@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.algoritmos.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.aed.contratos.BolsaAed;
 import br.edu.cesar.bloodell.aed.contratos.EventoAed;
 import br.edu.cesar.bloodell.aed.contratos.RequisicaoAed;
@@ -27,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AlgoritmoService {
 
+    private final AcessoUnidade acesso;
+
     private static final int LIMITE_DE_EVENTOS_NA_PILHA = 50;
 
     private final BolsaRepository bolsas;
@@ -35,7 +38,8 @@ public class AlgoritmoService {
 
     public AlgoritmoService(BolsaRepository bolsas,
                             EventoRastreabilidadeRepository eventos,
-                            RequisicaoService requisicaoService) {
+                            RequisicaoService requisicaoService, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.bolsas = bolsas;
         this.eventos = eventos;
         this.requisicaoService = requisicaoService;
@@ -43,11 +47,12 @@ public class AlgoritmoService {
 
     @Transactional(readOnly = true)
     public SnapshotDaLista estoque(Long unidadeId) {
+        if (unidadeId != null) acesso.exigir(unidadeId);
         ListaEstoque lista = new ListaEstoque();
         List<Bolsa> doBanco = unidadeId == null
                 ? bolsas.listarTodasNaOrdemDeChegada()
                 : bolsas.listarPorUnidadeNaOrdemDeChegada(unidadeId);
-        for (Bolsa bolsa : doBanco) {
+        for (Bolsa bolsa : acesso.filtrar(doBanco)) {
             lista.inserir(new BolsaAed(bolsa.getCodigo(), bolsa.getTipoSanguineo().formatado(),
                     bolsa.getComponente().name(), bolsa.getDataValidade().toString(),
                     bolsa.getSequenciaEntrada(), bolsa.getStatus().name()));
@@ -89,7 +94,7 @@ public class AlgoritmoService {
         // O banco e a fonte de verdade; a pilha e somente uma projecao em memoria
         // para exibir os eventos persistidos em LIFO sem alterar o historico.
         PilhaHistorico pilha = new PilhaHistorico();
-        List<EventoRastreabilidade> cronologicos = eventos.listarNaOrdemCronologica();
+        List<EventoRastreabilidade> cronologicos = acesso.filtrar(eventos.listarNaOrdemCronologica());
         int inicio = Math.max(0, cronologicos.size() - LIMITE_DE_EVENTOS_NA_PILHA);
         for (int indice = inicio; indice < cronologicos.size(); indice++) {
             EventoRastreabilidade evento = cronologicos.get(indice);

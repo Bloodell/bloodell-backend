@@ -344,14 +344,14 @@ Perfis: `local` (padrão, usado pelo Compose), `test` (integração) e `prod`.
 
 ## Equipe
 
-| Nome | E-mail institucional | Área |
-|---|---|---|
-| Alisson da Silva Santana | ass6@cesar.school | Scrum Master |
-| Arthur Abelardo Campos da Costa | aacc@cesar.school | Desenvolvedor |
-| Carlos Henrique Cavalcante Farias | chcf@cesar.school | Desenvolvedor |
-| Danilo Gabriel Diniz e Silva | dgds@cesar.school | Desenvolvedor |
-| Gabriel Gomes de Andrade | gga3@cesar.school | Product Owner |
-| Roberto Henrique Cavalcanti Freitas | rhcf@cesar.school | Analista de requisitos e testes (QA) |
+| Nome | E-mail institucional | Papel | Áreas de atuação |
+|---|---|---|---|
+| Alisson da Silva Santana | ass6@cesar.school | Scrum Master | — |
+| Arthur Abelardo Campos da Costa | aacc@cesar.school | Desenvolvedor | Algoritmos AED (C e Java); Domínio e persistência |
+| Carlos Henrique Cavalcante Farias | chcf@cesar.school | Desenvolvedor | API e integração; Frontend e painéis |
+| Danilo Gabriel Diniz e Silva | dgds@cesar.school | Desenvolvedor | Algoritmos AED (C e Java); Infraestrutura, CI/CD e telemetria |
+| Gabriel Gomes de Andrade | gga3@cesar.school | Product Owner | — |
+| Roberto Henrique Cavalcanti Freitas | rhcf@cesar.school | Analista de requisitos e testes (QA) | — |
 
 ## Entregas
 

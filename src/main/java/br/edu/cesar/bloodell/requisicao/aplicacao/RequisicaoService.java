@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.requisicao.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.aed.contratos.RequisicaoAed;
 import br.edu.cesar.bloodell.aed.u1.FilaRequisicoes;
 import br.edu.cesar.bloodell.compartilhado.dominio.TipoSanguineo;
@@ -30,12 +31,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class RequisicaoService {
 
+    private final AcessoUnidade acesso;
+
     private static final Logger LOG = LoggerFactory.getLogger(RequisicaoService.class);
 
     private final RequisicaoRepository requisicoes;
     private final UnidadeService unidadeService;
 
-    public RequisicaoService(RequisicaoRepository requisicoes, UnidadeService unidadeService) {
+    public RequisicaoService(RequisicaoRepository requisicoes, UnidadeService unidadeService, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.requisicoes = requisicoes;
         this.unidadeService = unidadeService;
     }
@@ -64,7 +68,18 @@ public class RequisicaoService {
     @Transactional(readOnly = true)
     public Page<RequisicaoResposta> listar(StatusRequisicao status, Prioridade prioridade,
                                            Long hospitalId, Pageable paginacao) {
-        return requisicoes.buscarComFiltros(status, prioridade, hospitalId, paginacao)
+        var escopo = acesso.escopo();
+        if (hospitalId != null) escopo.exigir(hospitalId);
+        org.springframework.data.jpa.domain.Specification<Requisicao> filtro = escopo.especificacao("hospital.id");
+        filtro = filtro.and((r, q, cb) -> {
+            var condicoes = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null) condicoes.add(cb.equal(r.get("status"), status));
+            if (prioridade != null) condicoes.add(cb.equal(r.get("prioridade"), prioridade));
+            if (hospitalId != null) condicoes.add(cb.equal(r.get("hospital").get("id"), hospitalId));
+            q.orderBy(cb.asc(r.get("criadaEm")), cb.asc(r.get("id")));
+            return cb.and(condicoes.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        });
+        return requisicoes.findAll(filtro, paginacao)
                 .map(RequisicaoService::paraResposta);
     }
 
@@ -88,8 +103,8 @@ public class RequisicaoService {
 
     @Transactional(readOnly = true)
     public Requisicao buscarEntidade(Long id) {
-        return requisicoes.findById(id)
-                .orElseThrow(() -> RecursoNaoEncontradoException.de("Requisicao", id));
+        return acesso.exigirRecurso(requisicoes.findById(id)
+                .orElseThrow(() -> RecursoNaoEncontradoException.de("Requisicao", id)));
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +122,7 @@ public class RequisicaoService {
     @Transactional(readOnly = true)
     public FilaRequisicoes montarFilaAPartirDoBanco() {
         FilaRequisicoes fila = new FilaRequisicoes();
-        List<Requisicao> aguardando = requisicoes.listarNaOrdemDeChegada(StatusRequisicao.NA_FILA);
+        List<Requisicao> aguardando = acesso.filtrar(requisicoes.listarNaOrdemDeChegada(StatusRequisicao.NA_FILA));
         for (Requisicao requisicao : aguardando) {
             fila.enfileirar(new RequisicaoAed(
                     requisicao.getCodigo(),

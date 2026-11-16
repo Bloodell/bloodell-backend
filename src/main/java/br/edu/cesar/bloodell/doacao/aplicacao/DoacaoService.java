@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.doacao.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.bolsa.dominio.Bolsa;
 import br.edu.cesar.bloodell.bolsa.dominio.EstadoBolsa;
 import br.edu.cesar.bloodell.bolsa.dominio.FabricaDeBolsas;
@@ -28,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DoacaoService {
 
+    private final AcessoUnidade acesso;
+
     private static final Logger LOG = LoggerFactory.getLogger(DoacaoService.class);
 
     private final DoacaoRepository doacoes;
@@ -40,7 +43,8 @@ public class DoacaoService {
                          BolsaRepository bolsas,
                          UnidadeService unidadeService,
                          SincronizadorDeEstoque sincronizador,
-                         RegistradorDeEventos registrador) {
+                         RegistradorDeEventos registrador, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.doacoes = doacoes;
         this.bolsas = bolsas;
         this.unidadeService = unidadeService;
@@ -91,7 +95,7 @@ public class DoacaoService {
 
     @Transactional(readOnly = true)
     public List<DoacaoResposta> listar() {
-        List<Doacao> encontradas = doacoes.findAllByOrderByDataHoraDesc();
+        List<Doacao> encontradas = acesso.filtrar(doacoes.findAllByOrderByDataHoraDesc());
         return encontradas.stream().map(this::paraResposta).toList();
     }
 
@@ -102,7 +106,8 @@ public class DoacaoService {
     }
 
     private DoacaoResposta paraResposta(Doacao doacao) {
-        List<BolsaGeradaResposta> geradas = bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId())
+        acesso.exigirRecurso(doacao);
+        List<BolsaGeradaResposta> geradas = acesso.filtrar(bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId()))
                 .stream()
                 .map(bolsa -> new BolsaGeradaResposta(bolsa.getId(), bolsa.getCodigo(),
                     bolsa.getComponente().name(), bolsa.getDataValidade().toString(),

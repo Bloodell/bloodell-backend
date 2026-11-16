@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.alocacao.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.aed.contratos.BolsaAed;
 import br.edu.cesar.bloodell.aed.u1.ListaEstoque;
 import br.edu.cesar.bloodell.alocacao.apresentacao.AlocacaoDtos.BolsaAlocadaResposta;
@@ -30,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AlocacaoService {
 
+    private final AcessoUnidade acesso;
+
     private static final Logger LOG = LoggerFactory.getLogger(AlocacaoService.class);
 
     private final RequisicaoRepository requisicoes;
@@ -46,7 +49,8 @@ public class AlocacaoService {
                            UnidadeRepository unidades,
                            PoliticaDeAlocacao politica,
                            SincronizadorDeEstoque sincronizador,
-                           RegistradorDeEventos registrador) {
+                           RegistradorDeEventos registrador, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.requisicoes = requisicoes;
         this.requisicaoService = requisicaoService;
         this.bolsas = bolsas;
@@ -83,6 +87,8 @@ public class AlocacaoService {
             throw new RegraDeNegocioException("Nao ha hemocentro cadastrado para atender a requisicao.");
         }
         Long hemocentroId = hemocentros.get(0).getId();
+        // Preserva a escolha de origem existente, mas nunca consome estoque sem vinculo.
+        acesso.exigir(hemocentroId);
         diario.anotar("origem",
                 "Hemocentro de origem: " + hemocentros.get(0).getNome(),
                 "escolha simples da U1 -- roteirizacao geografica existe, mas ainda nao seleciona a origem da alocacao");
@@ -117,6 +123,7 @@ public class AlocacaoService {
                     continue;
                 }
 
+                acesso.exigirRecurso(bolsa);
                 EstadoBolsa anterior = bolsa.getStatus();
                 bolsa.reservarPara(hoje);
                 registrador.registrar(bolsa, anterior, bolsa.getStatus(), requisicao.getId(),

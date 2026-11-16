@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.demonstracao.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.compartilhado.dominio.CoordenadaGeo;
 import br.edu.cesar.bloodell.compartilhado.dominio.Endereco;
 import br.edu.cesar.bloodell.compartilhado.dominio.TipoComponente;
@@ -33,6 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SeedDemonstracaoService {
 
+    private final AcessoUnidade acesso;
+
     private static final Logger LOG = LoggerFactory.getLogger(SeedDemonstracaoService.class);
 
     public static final long SEMENTE_PADRAO = 42L;
@@ -59,7 +62,8 @@ public class SeedDemonstracaoService {
                                    VeiculoRepository veiculos,
                                    DoacaoService doacaoService,
                                    RequisicaoService requisicaoService,
-                                   PropriedadesBloodell propriedades) {
+                                   PropriedadesBloodell propriedades, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.unidades = unidades;
         this.veiculos = veiculos;
         this.doacaoService = doacaoService;
@@ -69,6 +73,7 @@ public class SeedDemonstracaoService {
 
     @Transactional
     public CenarioResposta popular(CenarioEntrada entrada) {
+        acesso.exigirAdministrador();
         if (!propriedades.getDemonstracao().isHabilitado()) {
             throw new RegraDeNegocioException("O cenario de demonstracao esta desligado neste ambiente "
                     + "(bloodell.demonstracao.habilitado=false).");

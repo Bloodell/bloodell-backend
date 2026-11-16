@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.unidade.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.compartilhado.dominio.CoordenadaGeo;
 import br.edu.cesar.bloodell.compartilhado.dominio.Endereco;
 import br.edu.cesar.bloodell.compartilhado.excecao.ConflitoException;
@@ -18,14 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UnidadeService {
 
+    private final AcessoUnidade acesso;
+
     private final UnidadeRepository unidades;
 
-    public UnidadeService(UnidadeRepository unidades) {
+    public UnidadeService(UnidadeRepository unidades, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.unidades = unidades;
     }
 
     @Transactional
     public UnidadeResposta cadastrarHospital(UnidadeRequisicao entrada) {
+        acesso.exigirAdministrador();
         garantirNomeLivre(entrada.nome());
         Hospital hospital = new Hospital(entrada.nome(), criarEndereco(entrada), criarCoordenada(entrada));
         return paraResposta(unidades.save(hospital));
@@ -33,6 +38,7 @@ public class UnidadeService {
 
     @Transactional
     public UnidadeResposta cadastrarHemocentro(UnidadeRequisicao entrada) {
+        acesso.exigirAdministrador();
         garantirNomeLivre(entrada.nome());
         Hemocentro hemocentro = new Hemocentro(entrada.nome(), criarEndereco(entrada), criarCoordenada(entrada));
         return paraResposta(unidades.save(hemocentro));
@@ -40,12 +46,12 @@ public class UnidadeService {
 
     @Transactional(readOnly = true)
     public List<UnidadeResposta> listarHospitais() {
-        return converter(unidades.listarHospitais());
+        return converter(acesso.filtrar(unidades.listarHospitais()));
     }
 
     @Transactional(readOnly = true)
     public List<UnidadeResposta> listarHemocentros() {
-        return converter(unidades.listarHemocentros());
+        return converter(acesso.filtrar(unidades.listarHemocentros()));
     }
 
     @Transactional(readOnly = true)
@@ -84,6 +90,7 @@ public class UnidadeService {
      * quebraria a rastreabilidade, entao o banco recusa e a API responde 409.
      */
     private void remover(Long id, String tipoEsperado, String recurso) {
+        acesso.exigir(id);
         Unidade unidade = unidades.findById(id)
                 .filter(encontrada -> tipoEsperado.equals(encontrada.tipo()))
                 .orElseThrow(() -> RecursoNaoEncontradoException.de(recurso, id));
@@ -98,11 +105,13 @@ public class UnidadeService {
 
     @Transactional(readOnly = true)
     public Unidade buscarEntidade(Long id) {
+        acesso.exigir(id);
         return unidades.findById(id)
                 .orElseThrow(() -> RecursoNaoEncontradoException.de("Unidade", id));
     }
 
     private Unidade buscarEntidade(Long id, Class<? extends Unidade> tipo, String recurso) {
+        acesso.exigir(id);
         return unidades.findById(id)
                 .filter(tipo::isInstance)
                 .orElseThrow(() -> RecursoNaoEncontradoException.de(recurso, id));

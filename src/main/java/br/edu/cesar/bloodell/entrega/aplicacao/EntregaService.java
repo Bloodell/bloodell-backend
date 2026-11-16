@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.entrega.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.aed.u2.Roteirizador;
 import br.edu.cesar.bloodell.compartilhado.dominio.CoordenadaGeo;
 import br.edu.cesar.bloodell.compartilhado.excecao.ConflitoException;
@@ -32,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class EntregaService {
 
+    private final AcessoUnidade acesso;
+
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final EntregaRepository entregas;
@@ -42,7 +45,8 @@ public class EntregaService {
 
     public EntregaService(EntregaRepository entregas, RequisicaoRepository requisicoes,
                           VeiculoRepository veiculos, UnidadeRepository unidades,
-                          Roteirizador roteirizador) {
+                          Roteirizador roteirizador, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.entregas = entregas;
         this.requisicoes = requisicoes;
         this.veiculos = veiculos;
@@ -75,7 +79,7 @@ public class EntregaService {
     @Transactional(readOnly = true)
     public List<EntregaResposta> listar(StatusEntrega status) {
         List<Entrega> encontradas = status == null ? entregas.findAll() : entregas.findByStatusOrderByIdDesc(status);
-        return encontradas.stream().map(EntregaService::resposta).toList();
+        return acesso.filtrar(encontradas).stream().map(EntregaService::resposta).toList();
     }
 
     @Transactional(readOnly = true)
@@ -154,18 +158,19 @@ public class EntregaService {
     }
 
     private Entrega buscar(Long id) {
-        return entregas.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Entrega", id));
+        return acesso.exigirRecurso(entregas.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Entrega", id)));
     }
 
     private Requisicao requisicao(Long id) {
-        return requisicoes.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Requisicao", id));
+        return acesso.exigirRecurso(requisicoes.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Requisicao", id)));
     }
 
     private Veiculo veiculo(Long id) {
-        return veiculos.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Veiculo", id));
+        return acesso.exigirRecurso(veiculos.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Veiculo", id)));
     }
 
     private Unidade unidade(Long id) {
+        acesso.exigir(id);
         return unidades.findById(id).orElseThrow(() -> RecursoNaoEncontradoException.de("Unidade", id));
     }
 
