@@ -33,4 +33,12 @@ class AutenticacaoProducaoIT extends TesteDeIntegracao {
         assertThat(cliente.getForEntity("/api/v1/hemocentros", String.class).getStatusCode())
                 .isEqualTo(HttpStatus.UNAUTHORIZED);
     }
+
+    @Test
+    void endpointDeCenariosNaoExisteEmProducaoMesmoComToken() {
+        assertThat(propriedades.getDemonstracao().isHabilitado()).isFalse();
+        assertThat(cliente.postForEntity("/api/v1/demonstracoes/cenarios",
+                java.util.Map.of("cenario", "teste", "semente", 42), String.class).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
 }
