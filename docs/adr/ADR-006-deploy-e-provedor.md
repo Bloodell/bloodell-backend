@@ -28,7 +28,9 @@ mas não publica. A `main` protegida recebe mudanças após revisão da equipe.
 - O Nginx serve HTTPS/443 com certificado Let's Encrypt para o IP. HTTP/80
   redireciona para HTTPS, exceto a rota de validação do Certbot. O certificado
   de seis dias é renovado pelo timer do Snap e um deploy hook recarrega o Nginx.
-- A API não tem autenticação. O ambiente público é somente para dados sintéticos.
+- O modo demonstrativo não exige autenticação. A ativação do login JWT do Card 1
+  exige chave e contas provisionadas e coordenação com os cards de perfis/frontend;
+  esta implementação local não altera o deploy. O ambiente público é somente para dados sintéticos.
 
 ## Verificação e rollback
 

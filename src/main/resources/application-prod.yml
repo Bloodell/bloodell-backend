@@ -9,5 +9,7 @@ logging:
     root: INFO
     br.edu.cesar.bloodell: INFO
 bloodell:
+  seguranca:
+    autenticacao-habilitada: true
   demonstracao:
     habilitado: ${BLOODELL_DEMO_HABILITADO:false}
