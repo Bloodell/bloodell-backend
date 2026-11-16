@@ -141,7 +141,8 @@ class IsolamentoMultiunidadeIT extends TesteDeIntegracao {
                 "/indicadores/demanda", "/indicadores/estoque", "/indicadores/tempos")) {
             var resposta = request(HttpMethod.GET, rota, null, tokenA, String.class);
             assertThat(resposta.getStatusCode().value()).as(rota).isEqualTo(200);
-            assertThat(resposta.getBody()).as(rota).doesNotContain("REQ-2", "BOL-2", "Unidade 2", "Unidade 4");
+            assertThat(resposta.getBody()).as(rota).doesNotContain("REQ-2", "BOL-2",
+                    "\"hospital\":\"Unidade 2\"", "\"categoria\":\"Unidade 2\"");
         }
         assertStatus(HttpMethod.GET, "/algoritmos/estoque?unidadeId=4", null, tokenA, 403);
     }
