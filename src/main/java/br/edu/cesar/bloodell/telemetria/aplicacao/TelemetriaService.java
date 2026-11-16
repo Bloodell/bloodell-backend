@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.telemetria.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.compartilhado.dominio.FaixaTemperatura;
 import br.edu.cesar.bloodell.compartilhado.excecao.CapacidadeExcedidaException;
 import br.edu.cesar.bloodell.compartilhado.excecao.RecursoNaoEncontradoException;
@@ -23,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TelemetriaService {
 
+    private final AcessoUnidade acesso;
+    private final br.edu.cesar.bloodell.entrega.infraestrutura.EntregaRepository entregas;
+
     private static final FaixaTemperatura FAIXA_TRANSPORTE = new FaixaTemperatura(2.0, 6.0);
 
     private final FilaDeIngestao fila;
@@ -35,7 +39,9 @@ public class TelemetriaService {
                              MetricasDeIngestao metricas,
                              LeituraTelemetriaRepository leituras,
                              VeiculoRepository veiculos,
-                             PropriedadesBloodell propriedades) {
+                             PropriedadesBloodell propriedades, AcessoUnidade acesso, br.edu.cesar.bloodell.entrega.infraestrutura.EntregaRepository entregas) {
+        this.entregas = entregas;
+        this.acesso = acesso;
         this.fila = fila;
         this.metricas = metricas;
         this.leituras = leituras;
@@ -43,7 +49,11 @@ public class TelemetriaService {
         this.propriedades = propriedades;
     }
 
+    @Transactional(readOnly = true)
     public AceiteResposta receber(LeituraEntrada entrada) {
+        acesso.exigirRecurso(veiculos.findById(entrada.veiculoId())
+                .orElseThrow(() -> RecursoNaoEncontradoException.de("Veiculo", entrada.veiculoId())));
+        conferirEntrega(entrada.entregaId(), entrada.veiculoId());
         String correlacao = FiltroDeCorrelacao.correlacaoAtual();
         metricas.contarRecebida();
 
@@ -60,11 +70,10 @@ public class TelemetriaService {
 
     @Transactional(readOnly = true)
     public List<LeituraResposta> historicoDoVeiculo(Long veiculoId, OffsetDateTime de, OffsetDateTime ate) {
-        if (!veiculos.existsById(veiculoId)) {
-            throw RecursoNaoEncontradoException.de("Veiculo", veiculoId);
-        }
+        acesso.exigirRecurso(veiculos.findById(veiculoId)
+                .orElseThrow(() -> RecursoNaoEncontradoException.de("Veiculo", veiculoId)));
         List<LeituraTelemetria> encontradas = leituras.listarPorVeiculoNoPeriodo(veiculoId, de, ate);
-        return encontradas.stream()
+        return acesso.filtrar(encontradas).stream()
                 .map(leitura -> new LeituraResposta(
                     leitura.getId(),
                     leitura.getVeiculo().getId(),
@@ -78,7 +87,16 @@ public class TelemetriaService {
                 .toList();
     }
 
+    private void conferirEntrega(Long entregaId, Long veiculoId) {
+        if (entregaId == null) return;
+        var entrega = acesso.exigirRecurso(entregas.findById(entregaId)
+                .orElseThrow(() -> RecursoNaoEncontradoException.de("Entrega", entregaId)));
+        if (!entrega.getVeiculo().getId().equals(veiculoId))
+            throw new IllegalArgumentException("Entrega nao pertence ao veiculo informado.");
+    }
+
     public MetricasResposta metricas() {
+        acesso.exigirAdministrador();
         return new MetricasResposta(
                 metricas.getRecebidas(),
                 metricas.getPersistidas(),

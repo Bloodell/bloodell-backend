@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.veiculo.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.compartilhado.dominio.CoordenadaGeo;
 import br.edu.cesar.bloodell.compartilhado.excecao.ConflitoException;
 import br.edu.cesar.bloodell.compartilhado.excecao.RecursoNaoEncontradoException;
@@ -19,10 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class VeiculoService {
 
+    private final AcessoUnidade acesso;
+
     private final VeiculoRepository veiculos;
     private final UnidadeService unidadeService;
 
-    public VeiculoService(VeiculoRepository veiculos, UnidadeService unidadeService) {
+    public VeiculoService(VeiculoRepository veiculos, UnidadeService unidadeService, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.veiculos = veiculos;
         this.unidadeService = unidadeService;
     }
@@ -40,7 +44,7 @@ public class VeiculoService {
         List<Veiculo> encontrados = status == null
                 ? veiculos.findAllByOrderByPlaca()
                 : veiculos.findByStatusOrderByPlaca(status);
-        return encontrados.stream().map(VeiculoService::paraResposta).toList();
+        return acesso.filtrar(encontrados).stream().map(VeiculoService::paraResposta).toList();
     }
 
     @Transactional(readOnly = true)
@@ -78,8 +82,8 @@ public class VeiculoService {
 
     @Transactional(readOnly = true)
     public Veiculo buscarEntidade(Long id) {
-        return veiculos.findById(id)
-                .orElseThrow(() -> RecursoNaoEncontradoException.de("Veiculo", id));
+        return acesso.exigirRecurso(veiculos.findById(id)
+                .orElseThrow(() -> RecursoNaoEncontradoException.de("Veiculo", id)));
     }
 
     private Unidade buscarHemocentro(Long id) {

@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.alerta.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.alerta.dominio.Alerta;
 import br.edu.cesar.bloodell.alerta.dominio.NivelAlerta;
 import br.edu.cesar.bloodell.alerta.apresentacao.AlertaDtos.AlertaResposta;
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AlertaService {
 
+    private final AcessoUnidade acesso;
+
     private static final String TIPO_FALHA_COMUNICACAO = "FALHA_COMUNICACAO";
 
     private final AlertaRepository alertas;
@@ -29,7 +32,8 @@ public class AlertaService {
     public AlertaService(AlertaRepository alertas,
                          VeiculoRepository veiculos,
                          LeituraTelemetriaRepository leituras,
-                         PropriedadesBloodell propriedades) {
+                         PropriedadesBloodell propriedades, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.alertas = alertas;
         this.veiculos = veiculos;
         this.leituras = leituras;
@@ -39,7 +43,7 @@ public class AlertaService {
     @Transactional
     public List<AlertaResposta> listarAtivos() {
         detectarFalhasDeComunicacao();
-        return alertas.listarAbertos().stream()
+        return acesso.filtrar(alertas.listarAbertos()).stream()
                 .map(alerta -> new AlertaResposta(
                     alerta.getId(),
                     alerta.getTipo(),
@@ -56,7 +60,7 @@ public class AlertaService {
         OffsetDateTime agora = OffsetDateTime.now();
         long limiteSegundos = propriedades.getTelemetria().getTimeoutComunicacaoSegundos();
 
-        for (Veiculo veiculo : veiculos.findByStatusOrderByPlaca(StatusVeiculo.EM_ROTA)) {
+        for (Veiculo veiculo : acesso.filtrar(veiculos.findByStatusOrderByPlaca(StatusVeiculo.EM_ROTA))) {
             var ultimaLeitura = leituras.findTopByVeiculoIdOrderByRegistradaEmDesc(veiculo.getId());
             boolean semComunicacao = ultimaLeitura.isEmpty()
                     || Duration.between(ultimaLeitura.get().getRegistradaEm(), agora).getSeconds()
