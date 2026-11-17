@@ -10,6 +10,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class ManipuladorGlobalDeErros {
@@ -75,6 +77,24 @@ public class ManipuladorGlobalDeErros {
                 "O recurso foi alterado por outra operacao simultanea. Consulte o estado atual e tente novamente.",
                 requisicao, null);
     }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ProblemaApi> tratarIntegridade(DataIntegrityViolationException excecao,
+                                                         HttpServletRequest requisicao) {
+        LOG.warn("Conflito de integridade em {}: {}", requisicao.getRequestURI(), excecao.getMostSpecificCause().getClass().getSimpleName());
+        return montar("conflito-de-integridade", "Conflito com o estado atual do recurso",
+                HttpStatus.CONFLICT,
+                "A operacao conflita com um dado ja existente ou com um recurso vinculado.", requisicao, null);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ProblemaApi> tratarStatusHttp(ResponseStatusException excecao,
+                                                        HttpServletRequest requisicao) {
+        HttpStatus status = HttpStatus.valueOf(excecao.getStatusCode().value());
+        return montar("erro-http", status.getReasonPhrase(), status,
+                "A requisicao nao pode ser processada.", requisicao, null);
+    }
+
 
     @ExceptionHandler(CapacidadeExcedidaException.class)
     public ResponseEntity<ProblemaApi> tratarCapacidade(CapacidadeExcedidaException excecao,
