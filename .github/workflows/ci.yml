@@ -69,6 +69,24 @@ jobs:
       - name: Construir a imagem
         run: docker build -t bloodell-backend:${{ github.sha }} .
 
+      - name: Testar stack de observabilidade em Linux
+        env:
+          BLOODELL_IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          export GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+          export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+          trap 'docker compose down -v' EXIT
+          docker compose config --quiet
+          docker compose up -d --no-build --wait --wait-timeout 240
+          python3 scripts/verificar-observabilidade.py
+          for uid in bloodell-aplicacao bloodell-infraestrutura; do
+            curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/dashboards/uid/$uid" >/dev/null
+          done
+          for uid in prometheus loki tempo; do
+            curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/datasources/uid/$uid/health" >/dev/null
+          done
+
       - name: Preparar acesso a EC2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -106,7 +124,14 @@ jobs:
           git switch main
           git merge --ff-only origin/main
           test "$(git rev-parse HEAD)" = "$sha"
-          BLOODELL_IMAGE_TAG="$sha" docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
-          curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health
+          export BLOODELL_IMAGE_TAG="$sha"
+          export COMPOSE_FILE=compose.yaml:compose.deploy.yaml
+          docker compose config --quiet
+          docker compose up -d --no-build --wait --wait-timeout 240
+          docker compose exec -T api curl -fsS http://localhost:8081/actuator/health
+          python3 scripts/verificar-observabilidade.py
           REMOTE
-          curl --fail --silent --show-error "https://${EC2_HOST}/actuator/health"
+          curl -fsS "https://${EC2_HOST}/grafana/api/health" | jq -e '.database == "ok"'
+          curl -fsS "https://${EC2_HOST}/" >/dev/null
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "https://${EC2_HOST}/api/v1/hemocentros")" = 401
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "https://${EC2_HOST}/actuator/health")" = 404

@@ -64,6 +64,8 @@ public class ConfiguracaoSeguranca {
         if (propriedades.getSeguranca().isAutenticacaoHabilitada()) {
             http.authorizeHttpRequests(rotas -> rotas
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                    .requestMatchers(req -> req.getLocalPort() == 8081
+                            && "GET".equals(req.getMethod()) && req.getRequestURI().startsWith("/actuator/")).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                     .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**",

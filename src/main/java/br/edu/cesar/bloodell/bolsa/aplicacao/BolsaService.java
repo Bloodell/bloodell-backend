@@ -21,12 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BolsaService {
 
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(BolsaService.class);
+    private final io.micrometer.observation.ObservationRegistry observacoes;
     private final AcessoUnidade acesso;
 
     private final BolsaRepository bolsas;
     private final EventoRastreabilidadeRepository eventos;
 
-    public BolsaService(BolsaRepository bolsas, EventoRastreabilidadeRepository eventos, AcessoUnidade acesso) {
+    public BolsaService(BolsaRepository bolsas, EventoRastreabilidadeRepository eventos, AcessoUnidade acesso,
+                        io.micrometer.observation.ObservationRegistry observacoes) {
+        this.observacoes = observacoes;
         this.acesso = acesso;
         this.bolsas = bolsas;
         this.eventos = eventos;
@@ -60,6 +64,20 @@ public class BolsaService {
 
     @Transactional(readOnly = true)
     public List<EventoResposta> rastreabilidade(Long bolsaId) {
+        return io.micrometer.observation.Observation.createNotStarted("bloodell.bolsa.rastreabilidade", observacoes)
+                .observe(() -> {
+                    try {
+                        List<EventoResposta> resultado = consultarHistorico(bolsaId);
+                        LOG.info("Rastreabilidade consultada");
+                        return resultado;
+                    } catch (RecursoNaoEncontradoException erro) {
+                        LOG.info("Rastreabilidade indisponivel: bolsa inexistente");
+                        throw erro;
+                    }
+                });
+    }
+
+    private List<EventoResposta> consultarHistorico(Long bolsaId) {
         acesso.exigirRecurso(bolsas.findById(bolsaId)
                 .orElseThrow(() -> RecursoNaoEncontradoException.de("Bolsa", bolsaId)));
         List<EventoRastreabilidade> registrados = acesso.filtrar(eventos.findByBolsaIdOrderByOcorridoEmAscIdAsc(bolsaId));
