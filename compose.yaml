@@ -75,7 +75,8 @@ services:
     networks: [observabilidade]
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    image: ghcr.io/google/cadvisor:v0.61.1
+    cgroup: host
     restart: unless-stopped
     privileged: true
     volumes:
