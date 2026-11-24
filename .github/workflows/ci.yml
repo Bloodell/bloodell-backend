@@ -75,6 +75,9 @@ jobs:
         run: |
           set -euo pipefail
           export GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+          # Na CI a carga registra uma doação por minuto (mínimo aceito), para que
+          # increase() das métricas de negócio tenha variação antes das capturas.
+          export CARGA_INTERVALO_DOACAO=60
           export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
           trap 'docker compose down -v' EXIT
           docker compose config --quiet
