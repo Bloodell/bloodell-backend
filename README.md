@@ -42,7 +42,7 @@ cd bloodell-backend
 cp .env.example .env
 # edite POSTGRES_PASSWORD e BLOODELL_DB_PASSWORD com o mesmo valor e defina GRAFANA_ADMIN_PASSWORD
 
-# 3. subir API + PostgreSQL
+# 3. subir API, PostgreSQL, observabilidade (Prometheus, Loki, Tempo, Grafana) e carga
 docker compose up --build -d
 docker compose ps
 
@@ -117,7 +117,7 @@ No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
 | Volume nomeado `postgres-data` | Guardar os dados apenas no container | Preserva o banco quando os containers são removidos e recriados. `docker compose down` mantém o volume; `docker compose down -v` remove os dados. |
 | Comunicação pelo nome do serviço `postgres` | Fixar o endereço IP do container | O DNS do Compose permite que a API encontre o banco em `postgres:5432` pela rede `dados`, mesmo quando o IP do container muda. |
 | Rede interna `dados` e portas locais | Publicar API e banco em todas as interfaces | A API e o banco se comunicam pela rede interna. Para desenvolvimento, as portas publicadas ficam vinculadas a `127.0.0.1`. |
-| Healthchecks e `depends_on` com `service_healthy` | Iniciar os serviços sem verificar disponibilidade | A API só começa a iniciar depois que o PostgreSQL aceita conexões. O healthcheck da API consulta `/actuator/health`. |
+| Healthchecks e `depends_on` com `service_healthy` | Iniciar os serviços sem verificar disponibilidade | A API só começa a iniciar depois que o PostgreSQL aceita conexões. O healthcheck da API consulta `/actuator/health` na porta interna de gestão 8081, que não é publicada no host. |
 | Variáveis de ambiente e `.env` ignorado pelo Git | Colocar credenciais diretamente nos arquivos versionados | O `.env.example` documenta a configuração local. As credenciais reais ficam fora do repositório e devem ser configuradas no ambiente do provedor durante o deploy. |
 
 ## Observabilidade
@@ -128,10 +128,14 @@ No Windows, use `mvnw.cmd` no lugar de `./mvnw`.
 
 O workflow `.github/workflows/ci.yml` roda os testes C11 e `./mvnw verify` em
 pushes e pull requests. Somente depois dos dois jobs verdes ele constrói a imagem
-Docker. Em um **push na `main`** (inclusive merge de PR), o mesmo job envia essa
-imagem para a EC2 por SSH, atualiza o checkout de `main`, sobe API e PostgreSQL
-com Compose e exige que `/actuator/health` responda com sucesso. Em PRs, a
-imagem é validada, mas o deploy não ocorre. O antigo workflow de deploy que só
+Docker e sobe a stack completa em Linux, exigindo quatro targets `UP`, as métricas
+de negócio, um log no Loki cujo `traceId` abre um trace com span filho no Tempo,
+dashboards e fontes provisionados e a conta Viewer somente leitura. Em um
+**push na `main`** (inclusive merge de PR), o mesmo job envia essa imagem para a
+EC2 por SSH, atualiza o checkout de `main`, sobe a stack com Compose e confere a
+saúde interna em `8081`, o Grafana via HTTPS, o frontend, o `401` da API sem
+token e o bloqueio público de `/actuator`. Em PRs, a imagem é validada, mas o
+deploy não ocorre. O antigo workflow de deploy que só
 imprimia um lembrete foi removido.
 
 O endereço histórico da interface é

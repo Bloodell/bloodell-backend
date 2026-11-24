@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import json
 import os
 import subprocess
+import time
 from playwright.sync_api import sync_playwright
 
 PASTA = Path("docs/evidencias/observabilidade")
@@ -15,6 +16,29 @@ BASE = "http://localhost:3000"
 
 def interno(url):
     return subprocess.check_output(["docker", "compose", "exec", "-T", "api", "curl", "-fsS", url], text=True)
+
+
+def aguardar_historico(limite=420):
+    """Evita capturas com "No data": exige alguns minutos de séries e tráfego HTTP real."""
+    condicoes = (
+        'count_over_time(up{job="bloodell-backend"}[10m]) >= 12',
+        'count_over_time(up{job="cadvisor"}[10m]) >= 12',
+        'sum(rate(http_server_requests_seconds_count{application="bloodell-backend"}[2m])) > 0',
+        'sum(increase(bloodell_bolsas_geradas_total{application="bloodell-backend"}[1h])) > 0',
+    )
+    fim = time.monotonic() + limite
+    while True:
+        pendentes = [c for c in condicoes if not json.loads(interno(
+            "http://prometheus:9090/api/v1/query?" + urlencode({"query": c})))["data"]["result"]]
+        if not pendentes:
+            return
+        if time.monotonic() > fim:
+            raise TimeoutError("séries insuficientes para as capturas: " + ", ".join(pendentes))
+        print("Aguardando histórico:", pendentes[0], flush=True)
+        time.sleep(15)
+
+
+aguardar_historico()
 
 
 with sync_playwright() as playwright:
@@ -55,11 +79,14 @@ with sync_playwright() as playwright:
     dados = json.loads(interno("http://prometheus:9090/api/v1/query?" + urlencode({"query": query})))
     texto("04-PromQL", query + "\n\n" + "\n".join(
         f'{amostra["metric"]["job"]} = {amostra["value"][1]}' for amostra in dados["data"]["result"]))
+    page.set_viewport_size({"width": 1600, "height": 2600})
     for uid in ("aplicacao", "infraestrutura"):
-        page.goto(f"{BASE}/d/bloodell-{uid}/{uid}?from=now-15m&to=now")
+        page.goto(f"{BASE}/d/bloodell-{uid}/{uid}?from=now-30m&to=now&kiosk")
         page.get_by_text("Requisições por rota" if uid == "aplicacao" else "Disponibilidade dos targets", exact=True).first.wait_for()
-        page.wait_for_timeout(3500)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(5000)
         salvar("05-Dashboard-" + uid)
+    page.set_viewport_size({"width": 1600, "height": 1000})
     consulta = '{application="bloodell-backend"} |= "Rastreabilidade consultada"'
     stream = json.loads(interno("http://loki:3100/loki/api/v1/query_range?" + urlencode({"query": consulta, "limit": 1})))
     evento = json.loads(stream["data"]["result"][0]["values"][0][1])

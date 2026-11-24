@@ -1,4 +1,5 @@
 """Gera o relatório PDF. Uso: python scripts/relatorio.py (requer reportlab)."""
+from io import BytesIO
 from pathlib import Path
 from xml.sax.saxutils import escape
 import os
@@ -6,7 +7,6 @@ from reportlab.graphics.shapes import Drawing, String, Rect, Line, Polygon
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.utils import ImageReader
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,18 +79,38 @@ linha("O teste de integração cria uma doação com dois componentes e força o
 linha("Na primeira execução Linux, os quatro targets responderam, mas faltava a série do contêiner da API "
       "com o label do Compose no cAdvisor. Por isso a verificação consulta as séries por serviço e abre no Tempo "
       "o identificador extraído de um log real. Um target UP, sozinho, comprova apenas a comunicação com o exporter.")
+linha("As primeiras capturas foram feitas logo após a subida: painéis com rate() mostravam \"No data\" porque "
+      "ainda não havia duas coletas na janela. A captura agora aguarda histórico de coleta, tráfego HTTP e bolsas "
+      "geradas antes de abrir os dashboards, e a conta Viewer é verificada por script (papel, leitura e gravação negada).")
 linha('<link href="https://github.com/Bloodell/bloodell-backend/actions/runs/45408465874">Primeira execução Linux e resultados da integração Java e C11</link>')
 imagens = sorted(EVIDENCIAS.glob("*.png"))
 if not imagens:
     linha("Evidências visuais pendentes", "Heading2")
     linha("Esta edição parcial documenta a implementação. As capturas datadas da stack e a confirmação "
           "do acesso externo Viewer são necessárias para a entrega final.")
+def fatias(caminho):
+    """Divide capturas altas (dashboards inteiros) em partes legíveis na página."""
+    from PIL import Image as Pil
+    figura = Pil.open(caminho)
+    passo = int(figura.width * 445 / 744)
+    if figura.height <= passo * 1.15:
+        return [figura]
+    return [figura.crop((0, topo, figura.width, min(topo + passo, figura.height)))
+            for topo in range(0, figura.height, passo)]
+
+
 for caminho in imagens:
-    itens.append(PageBreak())
-    linha(escape(caminho.stem.replace("-", " ")), "Heading2")
-    largura, altura = ImageReader(str(caminho)).getSize()
-    escala = min(744 / largura, 445 / altura)
-    itens.append(Image(str(caminho), largura * escala, altura * escala))
+    partes = fatias(caminho)
+    for indice, parte in enumerate(partes, 1):
+        itens.append(PageBreak())
+        sufixo = f" ({indice}/{len(partes)})" if len(partes) > 1 else ""
+        linha(escape(caminho.stem.replace("-", " ")) + sufixo, "Heading2")
+        largura, altura = parte.size
+        escala = min(744 / largura, 445 / altura)
+        buffer = BytesIO()
+        parte.save(buffer, format="PNG")
+        buffer.seek(0)
+        itens.append(Image(buffer, largura * escala, altura * escala))
 if os.getenv("GITHUB_RUN_ID"):
     linha("Execução CI: " + escape(os.environ["GITHUB_RUN_ID"]))
 doc.build(itens)
