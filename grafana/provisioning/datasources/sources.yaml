@@ -11,6 +11,14 @@ datasources:
     type: tempo
     access: proxy
     url: http://tempo:3200
+    jsonData:
+      # Caminho inverso: do trace para os logs da mesma requisição no Loki.
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: -5m
+        spanEndTimeShift: 5m
+        customQuery: true
+        query: '{application="bloodell-backend"} |= "$${__span.traceId}"'
   - name: Loki
     uid: loki
     type: loki

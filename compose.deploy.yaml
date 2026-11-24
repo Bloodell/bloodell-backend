@@ -10,6 +10,7 @@ services:
     environment:
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:?informe a URL HTTPS terminada em /grafana/}
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_COOKIE_SECURE: "true"
   carga:
     environment:
       CARGA_SEED: "false"

@@ -92,6 +92,7 @@ jobs:
             echo "Datasource: $uid"
             curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/datasources/uid/$uid" | jq -e --arg uid "$uid" '.uid == $uid'
           done
+          GRAFANA_VIEWER_SENHA="$(openssl rand -hex 16)" python3 scripts/criar-viewer.py
           python3 -m venv "$RUNNER_TEMP/relatorio"
           "$RUNNER_TEMP/relatorio/bin/pip" install playwright reportlab
           "$RUNNER_TEMP/relatorio/bin/python" scripts/capturar-observabilidade.py
