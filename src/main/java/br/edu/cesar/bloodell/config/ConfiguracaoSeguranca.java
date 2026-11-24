@@ -5,6 +5,7 @@ import br.edu.cesar.bloodell.autenticacao.infraestrutura.UsuarioRepository;
 import br.edu.cesar.bloodell.compartilhado.apresentacao.ProblemaApi;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -52,7 +53,8 @@ public class ConfiguracaoSeguranca {
     @Bean
     public SecurityFilterChain seguranca(HttpSecurity http, PropriedadesBloodell propriedades,
             ObjectProvider<JwtDecoder> decoder, UsuarioRepository usuarios,
-            AuthenticationEntryPoint respostaNaoAutenticada, AccessDeniedHandler respostaSemPermissao) throws Exception {
+            AuthenticationEntryPoint respostaNaoAutenticada, AccessDeniedHandler respostaSemPermissao,
+            @Value("${management.server.port:-1}") int portaDeGestao) throws Exception {
         // Credenciais apenas no Authorization Bearer; sem sessao/cookie de autenticacao.
         http.csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults())
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -64,7 +66,8 @@ public class ConfiguracaoSeguranca {
         if (propriedades.getSeguranca().isAutenticacaoHabilitada()) {
             http.authorizeHttpRequests(rotas -> rotas
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                    .requestMatchers(req -> req.getLocalPort() == 8081
+                    // Porta de gestão separada: só alcançável pela rede Docker, sem publicação no host.
+                    .requestMatchers(req -> portaDeGestao > 0 && req.getLocalPort() == portaDeGestao
                             && "GET".equals(req.getMethod()) && req.getRequestURI().startsWith("/actuator/")).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                     .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/**").hasRole("ADMIN")

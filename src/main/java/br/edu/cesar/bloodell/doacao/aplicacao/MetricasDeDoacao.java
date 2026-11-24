@@ -5,6 +5,10 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+/**
+ * Métricas de negócio: registradas com zero na inicialização e incrementadas somente
+ * depois do commit da transação de {@link DoacaoService#registrar}, inclusive no cenário sintético.
+ */
 @Component
 public class MetricasDeDoacao {
     public record DoacaoRegistrada(int bolsasGeradas) { }
