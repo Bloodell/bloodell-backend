@@ -85,10 +85,12 @@ jobs:
             exit 1
           fi
           for uid in bloodell-aplicacao bloodell-infraestrutura; do
-            curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/dashboards/uid/$uid" >/dev/null
+            echo "Dashboard: $uid"
+            curl --retry 8 --retry-all-errors --retry-delay 3 -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/dashboards/uid/$uid" >/dev/null || { docker compose logs --tail=100 grafana; exit 1; }
           done
           for uid in prometheus loki tempo; do
-            curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/datasources/uid/$uid/health" >/dev/null
+            echo "Datasource: $uid"
+            curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/datasources/uid/$uid" | jq -e --arg uid "$uid" '.uid == $uid'
           done
           python3 -m venv "$RUNNER_TEMP/relatorio"
           "$RUNNER_TEMP/relatorio/bin/pip" install playwright reportlab
