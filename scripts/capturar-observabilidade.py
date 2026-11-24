@@ -64,8 +64,18 @@ with sync_playwright() as playwright:
     stream = json.loads(interno("http://loki:3100/loki/api/v1/query_range?" + urlencode({"query": consulta, "limit": 1})))
     evento = json.loads(stream["data"]["result"][0]["values"][0][1])
     texto("06-Loki", consulta + "\n\n" + json.dumps(evento, ensure_ascii=False, indent=2))
+    query = {"refId": "A", "datasource": {"type": "loki", "uid": "loki"}, "expr": consulta, "queryType": "range"}
+    pane = {"logs": {"datasource": "loki", "queries": [query], "range": {"from": "now-15m", "to": "now"}}}
+    page.goto(BASE + "/explore?" + urlencode({"schemaVersion": "1", "panes": json.dumps(pane)}))
+    page.get_by_text("Rastreabilidade consultada", exact=False).last.wait_for()
+    salvar("06-Explore-LogQL")
     trace_id = evento["traceId"]
     trace = json.loads(interno("http://tempo:3200/api/traces/" + trace_id))
     spans = [s for lote in trace["batches"] for grupo in lote["scopeSpans"] for s in grupo["spans"]]
     texto("07-Tempo", trace_id + "\n\n" + "\n".join(s["name"] + "  " + s["spanId"] for s in spans))
+    query = {"refId": "A", "datasource": {"type": "tempo", "uid": "tempo"}, "queryType": "traceql", "query": trace_id}
+    pane = {"trace": {"datasource": "tempo", "queries": [query], "range": {"from": "now-15m", "to": "now"}}}
+    page.goto(BASE + "/explore?" + urlencode({"schemaVersion": "1", "panes": json.dumps(pane)}))
+    page.get_by_text("bloodell.bolsa.rastreabilidade", exact=False).first.wait_for()
+    salvar("07-Explore-Tempo")
     browser.close()

@@ -1,5 +1,10 @@
+local.file_match "bloodell" {
+  path_targets = [{__path__ = "/logs/bloodell.log", application = "bloodell-backend"}]
+  sync_period = "5s"
+}
+
 loki.source.file "bloodell" {
-  targets = [{__path__ = "/logs/bloodell.log", application = "bloodell-backend"}]
+  targets = local.file_match.bloodell.targets
   forward_to = [loki.write.local.receiver]
 }
 

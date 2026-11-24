@@ -80,7 +80,8 @@ jobs:
           docker compose config --quiet
           docker compose up -d --no-build --wait --wait-timeout 240
           if ! python3 scripts/verificar-observabilidade.py; then
-            docker compose logs --tail=50 cadvisor alloy tempo
+            docker compose logs --tail=50 cadvisor alloy tempo carga
+            docker compose exec -T api ls -l /app/logs
             exit 1
           fi
           for uid in bloodell-aplicacao bloodell-infraestrutura; do
