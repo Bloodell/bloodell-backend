@@ -63,16 +63,18 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
-    networks: [observabilidade]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks: [observabilidade, aplicacao]
 
   node-exporter:
     image: prom/node-exporter:v1.9.1
     restart: unless-stopped
     pid: host
-    command: ["--path.rootfs=/host", "--path.procfs=/host/proc", "--path.sysfs=/host/sys"]
+    network_mode: host
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    command: ["--path.rootfs=/host", "--path.procfs=/host/proc", "--path.sysfs=/host/sys", "--web.listen-address=host.docker.internal:9100"]
     volumes:
       - /:/host:ro,rslave
-    networks: [observabilidade]
 
   cadvisor:
     image: ghcr.io/google/cadvisor:v0.61.1
@@ -140,10 +142,12 @@ services:
       CARGA_EMAIL: ${CARGA_EMAIL:-}
       CARGA_SENHA: ${CARGA_SENHA:-}
       CARGA_SEED: ${CARGA_SEED:-true}
+      CARGA_HEMOCENTRO_ID: ${CARGA_HEMOCENTRO_ID:-}
       CARGA_INTERVALO_DOACAO: ${CARGA_INTERVALO_DOACAO:-3600}
     depends_on:
       api:
         condition: service_healthy
+        restart: true
     networks: [aplicacao]
 
 networks:

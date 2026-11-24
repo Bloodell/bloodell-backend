@@ -89,6 +89,18 @@ jobs:
           for uid in prometheus loki tempo; do
             curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/datasources/uid/$uid/health" >/dev/null
           done
+          python3 -m venv "$RUNNER_TEMP/relatorio"
+          "$RUNNER_TEMP/relatorio/bin/pip" install playwright reportlab
+          "$RUNNER_TEMP/relatorio/bin/python" scripts/capturar-observabilidade.py
+          "$RUNNER_TEMP/relatorio/bin/python" scripts/relatorio.py
+
+      - name: Guardar relatório e capturas datadas
+        uses: actions/upload-artifact@v4
+        with:
+          name: observabilidade
+          path: |
+            docs/relatorio.pdf
+            docs/evidencias/observabilidade/
 
       - name: Preparar acesso a EC2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

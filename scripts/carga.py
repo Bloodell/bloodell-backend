@@ -40,7 +40,11 @@ def executar():
                     if not unidades and os.getenv("CARGA_SEED") == "true":
                         chamar("/demonstracoes/cenarios", {"cenario": "aula", "semente": 42}, token)
                         unidades = chamar("/hemocentros", token=token)
-                    unidade = unidades[0]["id"]
+                    if os.getenv("CARGA_SEED") != "true":
+                        raise ValueError("configure a unidade sintética")
+                    unidade = next((u["id"] for u in unidades if u["nome"] == "Hemocentro Central Recife"), None)
+                    if unidade is None:
+                        raise ValueError("configure a unidade sintética")
                 doacao = chamar("/doacoes", {
                     "hemocentroId": int(unidade), "tipoSanguineo": "O+", "volumeMl": 450,
                     "componentes": ["PLASMA", "CONCENTRADO_HEMACIAS"]

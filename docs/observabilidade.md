@@ -31,6 +31,8 @@ Os contadores `bloodell_doacoes_registradas_total` e `bloodell_bolsas_geradas_to
 
 ## Primeira publicação na EC2
 
+Endereço informado pela equipe: https://34.235.158.105/. A rota prevista para o professor é https://34.235.158.105/grafana/. Confirme acesso externo após a publicação.
+
 1. Confira memória, disco, arquitetura, versão do Docker e dos cgroups com `free -h`, `df -h`, `uname -m` e `docker info`. Registre SHA, configuração do proxy e nome do projeto atuais. Guarde um backup testado do banco com `pg_dump -Fc`. Nunca remova os volumes para atualizar.
 2. Configure no arquivo privado da EC2 `GRAFANA_ADMIN_PASSWORD`, `GRAFANA_ROOT_URL=https://HOST/grafana/`, senhas de banco, segredo JWT, `CARGA_EMAIL`, `CARGA_SENHA` e `CARGA_HEMOCENTRO_ID`. Pela API administrativa, vincule a conta de carga à unidade de teste. Mantenha o seed de produção desligado. Use apenas dados sintéticos.
 3. Instale o trecho de `deploy/nginx/observabilidade.conf` no bloco HTTPS do virtual host existente. Confira com `nginx -t` antes de recarregar. Preserve frontend, API e validação do Certbot. Restrinja o firewall às portas já necessárias para HTTPS, redirecionamento HTTP e SSH administrativo.
@@ -39,5 +41,7 @@ Os contadores `bloodell_doacoes_registradas_total` e `bloodell_bolsas_geradas_to
 6. Verifique o disco e o consumo com `docker stats --no-stream`. A retenção de logs e traces é de sete dias e o Prometheus usa o padrão de quinze dias. Ajuste à janela e capacidade medidas. Para rollback, restaure o checkout do SHA anterior, as imagens correspondentes e a configuração anterior do Nginx, reaplique a composição desse SHA e valide a rota de saúde dessa versão. Preserve o PostgreSQL e backups dos volumes do Grafana e da observabilidade.
 
 ## Evidências para o relatório
+
+O job de imagem guarda PDF e capturas datadas no artefato **observabilidade** do GitHub Actions. Para gerar o documento a partir das capturas em `docs/evidencias/observabilidade`, instale `reportlab` e execute `python scripts/relatorio.py` na raiz. A edição local sem capturas fica identificada como parcial.
 
 Capture com data, hora e SHA visíveis: Compose saudável, scrape interno com tag da aplicação, quatro targets UP, consulta PromQL, dois dashboards com dados, LogQL, trace com vários spans, clique log → trace, código e séries das duas métricas e acesso externo Viewer. Registre link da execução da main e o período de disponibilidade no PDF. Conceda acesso ao professor caso o repositório seja privado e envie o PDF e o link pelo Classroom.
