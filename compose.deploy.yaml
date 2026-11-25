@@ -3,3 +3,26 @@ services:
     image: bloodell-backend:${BLOODELL_IMAGE_TAG:?defina BLOODELL_IMAGE_TAG com o SHA do commit}
     environment:
       SPRING_PROFILES_ACTIVE: prod
+    restart: unless-stopped
+  postgres:
+    restart: unless-stopped
+  cadvisor:
+    command:
+      - --docker_only=true
+      - --enable_metrics=cpu,memory
+      - --housekeeping_interval=10s
+      - --storage_duration=1m
+  tempo:
+    mem_limit: 160m
+    memswap_limit: 192m
+  grafana:
+    environment:
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:?informe a URL HTTPS terminada em /grafana/}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_COOKIE_SECURE: "true"
+  carga:
+    environment:
+      CARGA_SEED: "false"
+      CARGA_HEMOCENTRO_ID: ${CARGA_HEMOCENTRO_ID:?informe a unidade sintetica vinculada}
+      CARGA_EMAIL: ${CARGA_EMAIL:?configure a conta de carga}
+      CARGA_SENHA: ${CARGA_SENHA:?configure a senha da conta de carga}
