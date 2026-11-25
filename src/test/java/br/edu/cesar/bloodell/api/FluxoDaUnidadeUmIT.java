@@ -2,7 +2,9 @@ package br.edu.cesar.bloodell.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import br.edu.cesar.bloodell.doacao.aplicacao.MetricasDeDoacao;
 import br.edu.cesar.bloodell.suporte.TesteDeIntegracao;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,11 +14,13 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @AutoConfigureTestRestTemplate
@@ -24,6 +28,34 @@ class FluxoDaUnidadeUmIT extends TesteDeIntegracao {
 
     @Autowired
     private TestRestTemplate cliente;
+
+    @Autowired
+    private MeterRegistry metricas;
+
+    @Test
+    @Order(10)
+    void contadoresRepresentamSomenteDoacoesConfirmadas(
+            @Autowired TransactionTemplate transacao, @Autowired ApplicationEventPublisher eventos) {
+        var doacoes = metricas.get("bloodell.doacoes.registradas").counter();
+        var bolsas = metricas.get("bloodell.bolsas.geradas").counter();
+        double inicioDoacoes = doacoes.count();
+        double inicioBolsas = bolsas.count();
+        List<Map<String, Object>> unidades = cliente.getForObject("/api/v1/hemocentros", List.class);
+        var entrada = Map.of("hemocentroId", unidades.get(0).get("id"), "tipoSanguineo", "O+",
+                "volumeMl", 450, "componentes", List.of("PLASMA", "CONCENTRADO_HEMACIAS"));
+        assertThat(cliente.postForEntity("/api/v1/doacoes", entrada, Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.CREATED);
+        var invalida = Map.of("hemocentroId", unidades.get(0).get("id"), "tipoSanguineo", "O+",
+                "volumeMl", 10, "componentes", List.of("PLASMA"));
+        assertThat(cliente.postForEntity("/api/v1/doacoes", invalida, Map.class).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        transacao.executeWithoutResult(status -> {
+            eventos.publishEvent(new MetricasDeDoacao.DoacaoRegistrada(3));
+            status.setRollbackOnly();
+        });
+        assertThat(doacoes.count()).isEqualTo(inicioDoacoes + 1);
+        assertThat(bolsas.count()).isEqualTo(inicioBolsas + 2);
+    }
 
     @BeforeAll
     static void bancoVazio(@Autowired JdbcTemplate jdbc) {

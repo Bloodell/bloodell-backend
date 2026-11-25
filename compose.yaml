@@ -20,8 +20,14 @@ services:
 
   api:
     build: .
+    image: bloodell-backend:${BLOODELL_IMAGE_TAG:-local}
     environment:
       SPRING_PROFILES_ACTIVE: local
+      MANAGEMENT_SERVER_PORT: 8081
+      BLOODELL_ENDPOINTS: health,info,metrics,prometheus
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://tempo:4318/v1/traces
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
       BLOODELL_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bloodell}
       BLOODELL_DB_USER: ${POSTGRES_USER:-bloodell}
       BLOODELL_DB_PASSWORD: ${POSTGRES_PASSWORD:?preencha POSTGRES_PASSWORD no .env}
@@ -37,18 +43,130 @@ services:
       BLOODELL_ADMIN_SENHA: ${BLOODELL_ADMIN_SENHA:-}
     ports:
       - "127.0.0.1:8080:8080"
-    networks: [aplicacao, dados]
+    volumes:
+      - api-logs:/app/logs
+    networks: [aplicacao, dados, observabilidade]
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8081/actuator/health"]
       interval: 10s
       timeout: 5s
       start_period: 60s
       retries: 10
 
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    # Retenção por tempo e por tamanho: cobre a janela de correção sem esgotar o disco da EC2.
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENCAO:-30d}
+      - --storage.tsdb.retention.size=${PROMETHEUS_RETENCAO_TAMANHO:-2GB}
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks: [observabilidade, aplicacao]
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    command: ["--path.rootfs=/host", "--path.procfs=/host/proc", "--path.sysfs=/host/sys", "--web.listen-address=host.docker.internal:9100"]
+    volumes:
+      - /:/host:ro,rslave
+
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.61.1
+    cgroup: host
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks: [observabilidade]
+
+  loki:
+    image: grafana/loki:3.5.3
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./loki/config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    networks: [observabilidade]
+
+  alloy:
+    image: grafana/alloy:v1.10.2
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["run", "--storage.path=/var/lib/alloy", "/etc/alloy/config.alloy"]
+    volumes:
+      - ./loki/config.alloy:/etc/alloy/config.alloy:ro
+      - api-logs:/logs:ro
+      - alloy-data:/var/lib/alloy
+    networks: [observabilidade]
+
+  tempo:
+    image: grafana/tempo:2.8.2
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks: [observabilidade]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?defina uma senha para o Grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Contas novas (como a do professor) entram como Viewer e não editam nem usam Explore.
+      GF_USERS_AUTO_ASSIGN_ORG_ROLE: Viewer
+      GF_USERS_VIEWERS_CAN_EDIT: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000/}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/opt/dashboards:ro
+    networks: [observabilidade, aplicacao]
+
+  carga:
+    image: python:3.13.7-alpine
+    restart: unless-stopped
+    command: ["python", "-u", "/opt/carga.py"]
+    volumes:
+      - ./scripts/carga.py:/opt/carga.py:ro
+    environment:
+      CARGA_EMAIL: ${CARGA_EMAIL:-}
+      CARGA_SENHA: ${CARGA_SENHA:-}
+      CARGA_SEED: ${CARGA_SEED:-true}
+      CARGA_HEMOCENTRO_ID: ${CARGA_HEMOCENTRO_ID:-}
+      CARGA_INTERVALO_DOACAO: ${CARGA_INTERVALO_DOACAO:-3600}
+    depends_on:
+      api:
+        condition: service_healthy
+        restart: true
+    networks: [aplicacao]
+
 networks:
+  observabilidade:
+    internal: true
   aplicacao: {}
   dados:
     internal: true
@@ -56,3 +174,9 @@ networks:
 
 volumes:
   postgres-data: {}
+  api-logs: {}
+  prometheus-data: {}
+  loki-data: {}
+  alloy-data: {}
+  tempo-data: {}
+  grafana-data: {}

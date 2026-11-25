@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface RequisicaoRepository extends JpaRepository<Requisicao, Long> {
+public interface RequisicaoRepository extends JpaRepository<Requisicao, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Requisicao> {
 
     Optional<Requisicao> findByCodigo(String codigo);
 

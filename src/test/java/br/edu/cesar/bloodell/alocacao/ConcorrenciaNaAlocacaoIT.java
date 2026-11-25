@@ -40,6 +40,9 @@ class ConcorrenciaNaAlocacaoIT extends TesteDeIntegracao {
     @Autowired
     private AlocacaoService alocacaoService;
 
+    @Autowired
+    private JdbcTemplate jdbc;
+
     @BeforeEach
     void prepararBanco(@Autowired JdbcTemplate jdbc) {
         limparBanco(jdbc);
@@ -94,6 +97,25 @@ class ConcorrenciaNaAlocacaoIT extends TesteDeIntegracao {
                 .isEqualTo(1);
         assertThat(falhas.get())
                 .as("a segunda tentativa precisa falhar de forma controlada")
+                .isEqualTo(1);
+
+        // A contagem de threads so mostra o comportamento da chamada. Estas consultas
+        // verificam o efeito comprometido no banco, que e a evidencia contra duplicacao.
+        assertThat(jdbc.queryForObject("SELECT status FROM bolsas", String.class))
+                .as("a unica bolsa permanece alocada uma unica vez")
+                .isEqualTo("ALOCADA");
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM eventos_rastreabilidade WHERE status_novo = 'ALOCADA'",
+                Integer.class))
+                .as("a rastreabilidade registra uma unica atribuicao da bolsa")
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM requisicoes WHERE status = 'ALOCADA'", Integer.class))
+                .as("somente uma requisicao recebe a bolsa")
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM requisicoes WHERE status = 'NA_FILA'", Integer.class))
+                .as("a requisicao perdedora continua elegivel para nova tentativa")
                 .isEqualTo(1);
     }
 }

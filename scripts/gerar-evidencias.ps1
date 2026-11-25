@@ -49,8 +49,10 @@ if (($ps | Select-String '\(healthy\)').Count -lt 2) {
 }
 Gravar '07-compose-ps.txt' ((Cabecalho 'API e PostgreSQL saudaveis' 'docker compose ps') + $ps)
 
-$saida = @()
-foreach ($rota in '/actuator/health', '/api/v1/algoritmos/situacao') {
+$saida = @('docker compose exec -T api curl -i http://localhost:8081/actuator/health')
+$saida += docker compose --project-directory $raiz exec -T api curl -fsi http://localhost:8081/actuator/health
+if ($LASTEXITCODE -ne 0) { throw 'Actuator interno indisponivel' }
+foreach ($rota in '/api/v1/algoritmos/situacao') {
     $saida += "PS> curl.exe -i http://127.0.0.1:8080$rota"
     $saida += curl.exe --silent --show-error --include "http://127.0.0.1:8080$rota"
     if ($LASTEXITCODE -ne 0) { throw "a API nao respondeu em $rota" }

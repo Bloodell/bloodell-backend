@@ -28,10 +28,16 @@ server:
     include-stacktrace: never
 
 management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${BLOODELL_ENDPOINTS:health,info}
   endpoint:
     health:
       probes:
@@ -46,7 +52,9 @@ springdoc:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requisicaoId:-sem-correlacao}] [%thread] %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requisicaoId:-sem-correlacao}] [%thread] %logger{36} - %msg%n"
+  structured:
+    format:
+      file: logstash
   file:
     name: ${BLOODELL_LOG_FILE:logs/bloodell.log}
   level:

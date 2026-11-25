@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.indicadores.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.bolsa.dominio.Bolsa;
 import br.edu.cesar.bloodell.bolsa.dominio.EstadoBolsa;
 import br.edu.cesar.bloodell.bolsa.infraestrutura.BolsaRepository;
@@ -21,13 +22,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class IndicadorService {
 
+    private final AcessoUnidade acesso;
+
     private static final String AVISO =
             "Dados 100% sinteticos, gerados pelo proprio sistema. Sem informacao real de doador ou paciente.";
 
     private final BolsaRepository bolsas;
     private final RequisicaoRepository requisicoes;
 
-    public IndicadorService(BolsaRepository bolsas, RequisicaoRepository requisicoes) {
+    public IndicadorService(BolsaRepository bolsas, RequisicaoRepository requisicoes, AcessoUnidade acesso) {
+        this.acesso = acesso;
         this.bolsas = bolsas;
         this.requisicoes = requisicoes;
     }
@@ -38,7 +42,7 @@ public class IndicadorService {
         Map<String, Long> porComponente = new LinkedHashMap<>();
         long total = 0;
 
-        for (Bolsa bolsa : bolsas.listarTodasNaOrdemDeChegada()) {
+        for (Bolsa bolsa : acesso.filtrar(bolsas.listarTodasNaOrdemDeChegada())) {
             if (bolsa.getStatus() != EstadoBolsa.DISPONIVEL) {
                 continue;
             }
@@ -55,7 +59,7 @@ public class IndicadorService {
     public IndicadorDemandaResposta demanda() {
         Map<String, Long> porHospital = new LinkedHashMap<>();
         Map<String, Long> porPrioridade = new LinkedHashMap<>();
-        List<Requisicao> todas = requisicoes.findAll();
+        List<Requisicao> todas = acesso.filtrar(requisicoes.findAll());
 
         for (Requisicao requisicao : todas) {
             porHospital.merge(requisicao.getHospital().getNome(), 1L, Long::sum);
@@ -71,7 +75,7 @@ public class IndicadorService {
         List<Double> minutos = new ArrayList<>();
         long atendidas = 0;
 
-        for (Requisicao requisicao : requisicoes.findAll()) {
+        for (Requisicao requisicao : acesso.filtrar(requisicoes.findAll())) {
             if (requisicao.getAtendidaEm() == null) {
                 continue;
             }
@@ -87,7 +91,7 @@ public class IndicadorService {
         }
 
         return new IndicadorTemposResposta(AVISO, "minutos", atendidas,
-                requisicoes.countByStatus(StatusRequisicao.NA_FILA),
+                acesso.filtrar(requisicoes.listarNaOrdemDeChegada(StatusRequisicao.NA_FILA)).size(),
                 EstatisticaDescritiva.de(valores));
     }
 

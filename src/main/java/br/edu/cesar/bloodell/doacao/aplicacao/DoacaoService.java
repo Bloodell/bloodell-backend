@@ -1,5 +1,6 @@
 package br.edu.cesar.bloodell.doacao.aplicacao;
 
+import br.edu.cesar.bloodell.autenticacao.aplicacao.AcessoUnidade;
 import br.edu.cesar.bloodell.bolsa.dominio.Bolsa;
 import br.edu.cesar.bloodell.bolsa.dominio.EstadoBolsa;
 import br.edu.cesar.bloodell.bolsa.dominio.FabricaDeBolsas;
@@ -22,11 +23,15 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DoacaoService {
+
+    private final AcessoUnidade acesso;
+    private final ApplicationEventPublisher eventos;
 
     private static final Logger LOG = LoggerFactory.getLogger(DoacaoService.class);
 
@@ -40,7 +45,10 @@ public class DoacaoService {
                          BolsaRepository bolsas,
                          UnidadeService unidadeService,
                          SincronizadorDeEstoque sincronizador,
-                         RegistradorDeEventos registrador) {
+                         RegistradorDeEventos registrador, AcessoUnidade acesso,
+                         ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
+        this.acesso = acesso;
         this.doacoes = doacoes;
         this.bolsas = bolsas;
         this.unidadeService = unidadeService;
@@ -82,6 +90,8 @@ public class DoacaoService {
                     bolsa.getStatus().name()));
         }
 
+        // Os contadores só avançam após o commit (ver MetricasDeDoacao).
+        eventos.publishEvent(new MetricasDeDoacao.DoacaoRegistrada(geradas.size()));
         LOG.info("Doacao {} registrada no hemocentro {} com {} bolsa(s) gerada(s).",
                 doacao.getCodigo(), hemocentro.getNome(), geradas.size());
 
@@ -91,7 +101,7 @@ public class DoacaoService {
 
     @Transactional(readOnly = true)
     public List<DoacaoResposta> listar() {
-        List<Doacao> encontradas = doacoes.findAllByOrderByDataHoraDesc();
+        List<Doacao> encontradas = acesso.filtrar(doacoes.findAllByOrderByDataHoraDesc());
         return encontradas.stream().map(this::paraResposta).toList();
     }
 
@@ -102,7 +112,8 @@ public class DoacaoService {
     }
 
     private DoacaoResposta paraResposta(Doacao doacao) {
-        List<BolsaGeradaResposta> geradas = bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId())
+        acesso.exigirRecurso(doacao);
+        List<BolsaGeradaResposta> geradas = acesso.filtrar(bolsas.findByDoacaoIdOrderBySequenciaEntradaAsc(doacao.getId()))
                 .stream()
                 .map(bolsa -> new BolsaGeradaResposta(bolsa.getId(), bolsa.getCodigo(),
                     bolsa.getComponente().name(), bolsa.getDataValidade().toString(),

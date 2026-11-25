@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface BolsaRepository extends JpaRepository<Bolsa, Long> {
+public interface BolsaRepository extends JpaRepository<Bolsa, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Bolsa> {
 
     Optional<Bolsa> findByCodigo(String codigo);
 
