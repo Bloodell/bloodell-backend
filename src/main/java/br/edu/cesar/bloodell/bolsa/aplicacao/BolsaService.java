@@ -10,9 +10,13 @@ import br.edu.cesar.bloodell.compartilhado.dominio.TipoComponente;
 import br.edu.cesar.bloodell.compartilhado.excecao.RecursoNaoEncontradoException;
 import br.edu.cesar.bloodell.rastreabilidade.dominio.EventoRastreabilidade;
 import br.edu.cesar.bloodell.rastreabilidade.infraestrutura.EventoRastreabilidadeRepository;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,12 +25,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BolsaService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(BolsaService.class);
+    private final ObservationRegistry observacoes;
     private final AcessoUnidade acesso;
 
     private final BolsaRepository bolsas;
     private final EventoRastreabilidadeRepository eventos;
 
-    public BolsaService(BolsaRepository bolsas, EventoRastreabilidadeRepository eventos, AcessoUnidade acesso) {
+    public BolsaService(BolsaRepository bolsas, EventoRastreabilidadeRepository eventos, AcessoUnidade acesso,
+                        ObservationRegistry observacoes) {
+        this.observacoes = observacoes;
         this.acesso = acesso;
         this.bolsas = bolsas;
         this.eventos = eventos;
@@ -60,6 +68,25 @@ public class BolsaService {
 
     @Transactional(readOnly = true)
     public List<EventoResposta> rastreabilidade(Long bolsaId) {
+        // Span filho do span HTTP; os logs abaixo herdam traceId/spanId pelo MDC.
+        return Observation.createNotStarted("bloodell.bolsa.rastreabilidade", observacoes)
+                .observe(() -> {
+                    try {
+                        List<EventoResposta> resultado = consultarHistorico(bolsaId);
+                        LOG.atInfo().addKeyValue("operacao", "rastreabilidade").addKeyValue("resultado", "sucesso")
+                                .addKeyValue("bolsaId", bolsaId).addKeyValue("eventos", resultado.size())
+                                .log("Rastreabilidade consultada");
+                        return resultado;
+                    } catch (RecursoNaoEncontradoException erro) {
+                        LOG.atInfo().addKeyValue("operacao", "rastreabilidade").addKeyValue("resultado", "bolsa-inexistente")
+                                .addKeyValue("bolsaId", bolsaId)
+                                .log("Rastreabilidade indisponivel: bolsa inexistente");
+                        throw erro;
+                    }
+                });
+    }
+
+    private List<EventoResposta> consultarHistorico(Long bolsaId) {
         acesso.exigirRecurso(bolsas.findById(bolsaId)
                 .orElseThrow(() -> RecursoNaoEncontradoException.de("Bolsa", bolsaId)));
         List<EventoRastreabilidade> registrados = acesso.filtrar(eventos.findByBolsaIdOrderByOcorridoEmAscIdAsc(bolsaId));

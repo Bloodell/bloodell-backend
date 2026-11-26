@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DoacaoService {
 
     private final AcessoUnidade acesso;
+    private final ApplicationEventPublisher eventos;
 
     private static final Logger LOG = LoggerFactory.getLogger(DoacaoService.class);
 
@@ -43,7 +45,9 @@ public class DoacaoService {
                          BolsaRepository bolsas,
                          UnidadeService unidadeService,
                          SincronizadorDeEstoque sincronizador,
-                         RegistradorDeEventos registrador, AcessoUnidade acesso) {
+                         RegistradorDeEventos registrador, AcessoUnidade acesso,
+                         ApplicationEventPublisher eventos) {
+        this.eventos = eventos;
         this.acesso = acesso;
         this.doacoes = doacoes;
         this.bolsas = bolsas;
@@ -86,6 +90,8 @@ public class DoacaoService {
                     bolsa.getStatus().name()));
         }
 
+        // Os contadores só avançam após o commit (ver MetricasDeDoacao).
+        eventos.publishEvent(new MetricasDeDoacao.DoacaoRegistrada(geradas.size()));
         LOG.info("Doacao {} registrada no hemocentro {} com {} bolsa(s) gerada(s).",
                 doacao.getCodigo(), hemocentro.getNome(), geradas.size());
 

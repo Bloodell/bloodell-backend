@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: BLOODELL
+    folder: BLOODELL
+    type: file
+    options:
+      path: /opt/dashboards

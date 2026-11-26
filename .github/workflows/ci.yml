@@ -69,6 +69,46 @@ jobs:
       - name: Construir a imagem
         run: docker build -t bloodell-backend:${{ github.sha }} .
 
+      - name: Testar stack de observabilidade em Linux
+        env:
+          BLOODELL_IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          export GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+          # Na CI a carga registra uma doação por minuto (mínimo aceito), para que
+          # increase() das métricas de negócio tenha variação antes das capturas.
+          export CARGA_INTERVALO_DOACAO=60
+          export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+          trap 'docker compose down -v' EXIT
+          docker compose config --quiet
+          docker compose up -d --no-build --wait --wait-timeout 240
+          if ! python3 scripts/verificar-observabilidade.py; then
+            docker compose logs --tail=50 cadvisor alloy tempo carga
+            docker compose exec -T api ls -l /app/logs
+            exit 1
+          fi
+          for uid in bloodell-aplicacao bloodell-infraestrutura; do
+            echo "Dashboard: $uid"
+            curl --retry 8 --retry-all-errors --retry-delay 3 -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/dashboards/uid/$uid" >/dev/null || { docker compose logs --tail=100 grafana; exit 1; }
+          done
+          for uid in prometheus loki tempo; do
+            echo "Datasource: $uid"
+            curl -fsS -u "admin:$GRAFANA_ADMIN_PASSWORD" "http://localhost:3000/api/datasources/uid/$uid" | jq -e --arg uid "$uid" '.uid == $uid'
+          done
+          GRAFANA_VIEWER_SENHA="$(openssl rand -hex 16)" python3 scripts/criar-viewer.py
+          python3 -m venv "$RUNNER_TEMP/relatorio"
+          "$RUNNER_TEMP/relatorio/bin/pip" install playwright reportlab
+          "$RUNNER_TEMP/relatorio/bin/python" scripts/capturar-observabilidade.py
+          "$RUNNER_TEMP/relatorio/bin/python" scripts/relatorio.py
+
+      - name: Guardar relatório e capturas datadas
+        uses: actions/upload-artifact@v4
+        with:
+          name: observabilidade
+          path: |
+            docs/relatorio.pdf
+            docs/evidencias/observabilidade/
+
       - name: Preparar acesso a EC2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -106,7 +146,14 @@ jobs:
           git switch main
           git merge --ff-only origin/main
           test "$(git rev-parse HEAD)" = "$sha"
-          BLOODELL_IMAGE_TAG="$sha" docker compose -f compose.yaml -f compose.deploy.yaml up -d --no-build --wait
-          curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health
+          export BLOODELL_IMAGE_TAG="$sha"
+          export COMPOSE_FILE=compose.yaml:compose.deploy.yaml
+          docker compose config --quiet
+          docker compose up -d --no-build --wait --wait-timeout 240
+          docker compose exec -T api curl -fsS http://localhost:8081/actuator/health
+          python3 scripts/verificar-observabilidade.py
           REMOTE
-          curl --fail --silent --show-error "https://${EC2_HOST}/actuator/health"
+          curl -fsS "https://${EC2_HOST}/grafana/api/health" | jq -e '.database == "ok"'
+          curl -fsS "https://${EC2_HOST}/" >/dev/null
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "https://${EC2_HOST}/api/v1/hemocentros")" = 401
+          test "$(curl -sS -o /dev/null -w '%{http_code}' "https://${EC2_HOST}/actuator/health")" = 404
